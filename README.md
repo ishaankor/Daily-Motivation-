@@ -1,2 +1,1 @@
-# GITHUBPractice
-Github practice.
+# Daily Motivation!
