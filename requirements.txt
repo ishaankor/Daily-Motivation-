@@ -1,0 +1,11 @@
+tweepy>=4.14.0
+twifork>=2.4.0
+psycopg2-binary>=2.9.9
+requests>=2.31.0
+python-dotenv>=1.0.0
+Pillow>=10.1.0
+matplotlib>=3.8.0
+numpy>=1.26.0
+flask>=3.0.0
+gunicorn>=21.0.0
+schedule>=1.2.0

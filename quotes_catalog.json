@@ -1,0 +1,262 @@
+[
+  {
+    "id": "stoic_1",
+    "quote": "We suffer more often in imagination than in reality.",
+    "author": "Seneca",
+    "category": "STOIC WISDOM",
+    "theme": "Stoic Tuesday",
+    "takeaways": [
+      "Focus only on what you control.",
+      "Never assume malice when exhausted.",
+      "Fear is interest on an unpaid debt."
+    ],
+    "prompt": "Which one do you struggle with most?",
+    "backstory": "Seneca was exiled to Corsica for 8 years. Instead of breaking down, he wrote treatises on emotional composure that leaders still study 2,000 years later.",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "id": "discipline_1",
+    "quote": "You have power over your mind—not outside events. Realize this, and you will find strength.",
+    "author": "Marcus Aurelius",
+    "category": "DISCIPLINE",
+    "theme": "Wisdom Wednesday",
+    "takeaways": [
+      "Acknowledge what is outside your control.",
+      "Master your internal dialogue.",
+      "Respond with reason, not emotion."
+    ],
+    "prompt": "What's one thing you need to let go of today?",
+    "backstory": "Marcus Aurelius journaled his Meditations while leading armies on the northern Roman frontier, writing reminders to remain humble and grounded.",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "id": "execution_1",
+    "quote": "Action cures fear. Indecision and delay fertilize it.",
+    "author": "David Schwartz",
+    "category": "EXECUTION",
+    "theme": "Focus Friday",
+    "takeaways": [
+      "Start before you feel fully ready.",
+      "Action produces clarity, not thinking.",
+      "Break mountains into 5-minute steps."
+    ],
+    "prompt": "What have you been postponing that you can start today?",
+    "backstory": "David Schwartz observed that the single trait separating top achievers from average performers was the speed with which they translated ideas into tangible motion.",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "id": "ambition_1",
+    "quote": "The only place where success comes before work is in the dictionary.",
+    "author": "Vidal Sassoon",
+    "category": "AMBITION",
+    "theme": "Motivation Monday",
+    "takeaways": [
+      "Embrace the unglamorous hours of practice.",
+      "Results lag effort by months; keep going.",
+      "Compounding happens when nobody is watching."
+    ],
+    "prompt": "Are you putting in the quiet work today?",
+    "backstory": "Vidal Sassoon grew up in a London orphanage before apprenticing for years without pay, eventually revolutionizing the entire hair styling and salon industry worldwide.",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "You have power over your mind, not outside events.",
+    "author": "Marcus Aurelius",
+    "category": "STOIC WISDOM",
+    "takeaways": [
+      "Focus on your responses, not circumstances.",
+      "Practice daily reflection to reinforce calm.",
+      "Accept what you cannot control."
+    ],
+    "prompt": "How will you master your reactions?",
+    "backstory": "Marcus Aurelius ruled Rome during wars and plagues, yet he sought inner peace through philosophy. His Meditations remain a guide to resilience.",
+    "id": "ai_1789668405_978",
+    "theme": "Stoic Tuesday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "The obstacle is the way.",
+    "author": "Marcus Aurelius",
+    "category": "STOIC RESILIENCE",
+    "takeaways": [
+      "Embrace current challenges as growth opportunities.",
+      "Stop fighting reality; work within it.",
+      "Turn roadblocks into stepping stones now."
+    ],
+    "prompt": "What is your current obstacle?",
+    "backstory": "Ruled Rome during plague and war. Praised for calm duty despite immense pressure.",
+    "id": "ai_1789668555_831",
+    "theme": "Tenacity Thursday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "We suffer more often in imagination than in reality.",
+    "author": "Seneca the Younger",
+    "category": "RELENTLESS AMBITION",
+    "takeaways": [
+      "Challenge your fears, not circumstances.",
+      "Focus on solutions, not problems.",
+      "Persist through doubt, embrace resilience."
+    ],
+    "prompt": "Which takeaway fuels your drive?",
+    "backstory": "Seneca, a Stoic philosopher in ancient Rome, taught resilience through personal letters. His works guide modern thinkers toward mental strength.",
+    "id": "ai_1789668625_137",
+    "theme": "Motivation Monday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "You have power over your mind, not outside events.",
+    "author": "Marcus Aurelius",
+    "category": "STOIC WISDOM",
+    "takeaways": [
+      "Control thoughts, control reactions.",
+      "Accept what you cannot change.",
+      "Practice daily reflection for clarity."
+    ],
+    "prompt": "Which lesson will you apply?",
+    "backstory": "Marcus Aurelius, Roman emperor, wrote Meditations in 2nd-century Rome, reflecting on stoic principles. His writings guide modern seekers of calm.",
+    "id": "ai_1789668627_173",
+    "theme": "Stoic Tuesday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "The soul becomes dyed with the color of its thoughts.",
+    "author": "Marcus Aurelius",
+    "category": "PHILOSOPHICAL HUMILITY",
+    "takeaways": [
+      "Align thoughts with your values.",
+      "Practice daily reflection to refine.",
+      "Seek truth over comfort."
+    ],
+    "prompt": "Which takeaway resonates most?",
+    "backstory": "Marcus Aurelius, Roman emperor, penned Meditations while campaigning. His stoic reflections guide modern seekers of inner peace.",
+    "id": "ai_1789668629_785",
+    "theme": "Wisdom Wednesday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "Never, never, never give up.",
+    "author": "Winston Churchill",
+    "category": "STOIC TENACITY",
+    "takeaways": [
+      "Keep pushing beyond doubt.",
+      "Accept failures as stepping stones.",
+      "Stay focused on long-term vision."
+    ],
+    "prompt": "Which one resonates most?",
+    "backstory": "Winston Churchill, British Prime Minister during WWII, used this phrase to inspire troops. It reflects his unwavering resolve.",
+    "id": "ai_1789668844_539",
+    "theme": "Tenacity Thursday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "Never, never, never give up.",
+    "author": "Winston Churchill",
+    "category": "TENACITY RESILIENCE",
+    "takeaways": [
+      "Persist through setbacks relentlessly.",
+      "Embrace failure as learning.",
+      "Maintain focus, ignore distractions."
+    ],
+    "prompt": "Which one fuels you?",
+    "backstory": "Churchill delivered this during WWII, urging Britain to endure Nazi threat. It became emblem of steadfast resolve.",
+    "id": "ai_1789680472_460",
+    "theme": "Tenacity Thursday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "The only thing that overcomes hard luck is hard work.",
+    "author": "Thomas A. Edison",
+    "category": "PERSEVERANCE POWER",
+    "takeaways": [
+      "Persist through setbacks, stay focused.",
+      "Turn obstacles into stepping stones.",
+      "Celebrate small wins, keep moving."
+    ],
+    "prompt": "Which takeaway fuels your drive?",
+    "backstory": "Thomas Edison endured countless failures before inventing the light bulb. He championed hard work as the antidote to bad luck.",
+    "id": "ai_1789685848_752",
+    "theme": "Tenacity Thursday",
+    "times_posted": 1,
+    "last_posted": "2026-09-17 15:57:35"
+  },
+  {
+    "quote": "It always seems impossible until it's done.",
+    "author": "Nelson Mandela",
+    "category": "PERSEVERANCE RESILIENCE",
+    "takeaways": [
+      "Persist until success becomes reality.",
+      "Embrace setbacks as growth opportunities.",
+      "Celebrate small victories to fuel momentum."
+    ],
+    "axiom": "Persistence transforms obstacles into stepping stones.",
+    "prompt": "Which challenge will you conquer?",
+    "backstory": "Mandela endured 27 years of imprisonment, refusing to surrender hope. His words inspire resilience worldwide.",
+    "id": "ai_1789693525_214",
+    "theme": "Tenacity Thursday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "It always seems impossible until it is done.",
+    "author": "Nelson Mandela",
+    "category": "PERSEVERANCE POWER",
+    "takeaways": [
+      "Push beyond the first failure.",
+      "Break goals into daily bite-sized tasks.",
+      "Celebrate small wins to fuel momentum."
+    ],
+    "axiom": "Persistence outweighs talent when effort is consistent.",
+    "prompt": "Which takeaway will you try?",
+    "backstory": "Nelson Mandela endured 27 years of imprisonment. He famously said this to inspire resilience.",
+    "id": "ai_1789706552_733",
+    "theme": "Tenacity Thursday",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "The unexamined life is not worth living.",
+    "author": "Socrates",
+    "category": "REFLECTION RESET",
+    "takeaways": [
+      "Pause, reflect, reset priorities",
+      "Seek clarity through quiet solitude",
+      "Plan next week with purpose"
+    ],
+    "axiom": "Self-reflection fuels purposeful action",
+    "prompt": "What will you reset today?",
+    "backstory": "Socrates, a classical Greek philosopher, championed self-examination. His Socratic method remains a foundational practice for introspection.",
+    "id": "ai_1789716065_357",
+    "theme": "Sunday Reset",
+    "times_posted": 0,
+    "last_posted": null
+  },
+  {
+    "quote": "He who knows others is wise; he who knows himself is enlightened.",
+    "author": "Socrates",
+    "category": "SELF REFLECTION",
+    "takeaways": [
+      "Pause, reflect, reset your mindset.",
+      "List three lessons learned this week.",
+      "Plan next week's priorities with clarity."
+    ],
+    "axiom": "Self-knowledge fuels purposeful action.",
+    "prompt": "Which will you try today?",
+    "backstory": "Socrates, the Athenian philosopher, emphasized introspection. His teachings inspire modern self-reflection practices.",
+    "id": "ai_1789728208_490",
+    "theme": "Sunday Reset",
+    "times_posted": 0,
+    "last_posted": null
+  }
+]

@@ -1,0 +1,32 @@
+# Environment & Secrets
+.env
+.env.local
+*.env
+cookies.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+dist/
+build/
+*.spec
+tests/
+
+# Database & Generated files
+*.db
+*.sqlite
+*.sqlite3
+sample_*.png
+output/*
+!output/.gitkeep
+temp*
+*.gif
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

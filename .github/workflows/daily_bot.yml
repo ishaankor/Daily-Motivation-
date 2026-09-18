@@ -1,0 +1,25 @@
+name: Daily Motivation Twitter Bot Cron
+
+on:
+  schedule:
+    # Monday through Saturday at 9:00 AM EST (13:00 UTC)
+    - cron: '0 13 * * 1-6'
+    # Sunday Reset at 6:00 PM EST (22:00 UTC)
+    - cron: '0 22 * * 0'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+jobs:
+  post-daily-tweet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Post via Webhook
+        env:
+          RENDER_SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -n "$RENDER_SERVICE_URL" ]; then
+            echo "Pinging Render Webhook: ${RENDER_SERVICE_URL}/cron/daily"
+            curl -s -f -X GET "${RENDER_SERVICE_URL}/cron/daily?secret=${CRON_SECRET}"
+          else
+            echo "No RENDER_SERVICE_URL configured. Set it in repository secrets if deploying to Render."
+          fi

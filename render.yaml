@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: daily-motivation-bot
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: HANDLE
+        value: "@MotivationFTD"
+      - key: GROQ_MODEL
+        value: "openai/gpt-oss-20b"
+      - key: DB_HOST
+        value: "aws-1-us-west-1.pooler.supabase.com"
+      - key: DB_PORT
+        value: "6543"
+      - key: DB_NAME
+        value: "postgres"
+      - key: DB_USER
+        value: "postgres.xprikamuiprhvovypaoi"
+      - key: DB_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: TWITTER_AUTH_TOKEN
+        sync: false
+      - key: TWITTER_CT0
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
