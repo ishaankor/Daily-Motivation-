@@ -191,7 +191,14 @@ def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3)
         f"Respond ONLY in valid JSON."
     )
 
-    models_to_try = [ai_config.groq_model, ai_config.fallback_model]
+    # Avoid 20b which has a known json_validate_failed issue on Groq
+    primary = ai_config.groq_model
+    if primary == "openai/gpt-oss-20b":
+        primary = "openai/gpt-oss-120b"
+
+    candidate_models = [primary, "openai/gpt-oss-120b", "qwen/qwen3.8-27b", "groq/compound-mini"]
+    seen = set()
+    models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
     for model in models_to_try:
         for attempt in range(retries):
@@ -227,6 +234,9 @@ def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3)
                         return parsed
                     else:
                         print(f"[AI Generator] Generation exceeded 280 chars on model {model}, retrying (attempt {attempt+1}/{retries})...")
+                elif response.status_code == 400 and "json_validate_failed" in response.text:
+                    print(f"[AI Generator] Model '{model}' failed JSON schema validation; switching models immediately.")
+                    break
                 else:
                     print(f"[AI Generator] API error ({response.status_code}): {response.text}")
                     time.sleep(1)

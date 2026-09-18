@@ -12,7 +12,7 @@ services:
       - key: HANDLE
         value: "@MotivationFTD"
       - key: GROQ_MODEL
-        value: "openai/gpt-oss-20b"
+        value: "openai/gpt-oss-120b"
       - key: DB_HOST
         value: "aws-1-us-west-1.pooler.supabase.com"
       - key: DB_PORT

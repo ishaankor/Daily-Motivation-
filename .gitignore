@@ -30,3 +30,5 @@ temp*
 # OS
 .DS_Store
 Thumbs.db
+.env.example
+env.example

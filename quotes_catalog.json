@@ -258,5 +258,22 @@
     "theme": "Sunday Reset",
     "times_posted": 0,
     "last_posted": null
+  },
+  {
+    "quote": "The successful warrior is the average man, with focused attention.",
+    "author": "Bruce Lee",
+    "category": "DEEP WORK",
+    "takeaways": [
+      "Eliminate distractions for two hours",
+      "Schedule focused blocks daily",
+      "Review work, refine craft"
+    ],
+    "axiom": "Attention is the currency of achievement.",
+    "prompt": "Ready to lock in focus?",
+    "backstory": "Bruce Lee emphasized martial arts mastery through single‑minded practice. He taught that focused attention transforms ordinary effort into extraordinary skill.",
+    "id": "ai_1789757778_118",
+    "theme": "Focus Friday",
+    "times_posted": 0,
+    "last_posted": null
   }
 ]

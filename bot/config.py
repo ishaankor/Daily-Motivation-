@@ -38,7 +38,7 @@ class DatabaseConfig:
 @dataclass(frozen=True)
 class AIConfig:
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
+    groq_model: str = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
     fallback_model: str = "qwen/qwen3.8-27b"
 
 
