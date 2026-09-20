@@ -20,9 +20,21 @@ app = Flask(__name__)
 CRON_SECRET = os.getenv("CRON_SECRET", "")
 
 
-@app.route("/", methods=["GET"])
+@app.route("/ping", methods=["GET", "HEAD"])
+@app.route("/warmup", methods=["GET", "HEAD"])
+def ping():
+    """Ultra-lightweight ping/warmup endpoint returning 2 bytes to prevent cold starts."""
+    if request.method == "HEAD":
+        return "", 200
+    return "OK", 200, {"Content-Type": "text/plain"}
+
+
+@app.route("/", methods=["GET", "HEAD"])
+@app.route("/health", methods=["GET", "HEAD"])
 def health():
-    """Health check endpoint for Render."""
+    """Health check endpoint for Render and uptime monitoring."""
+    if request.method == "HEAD":
+        return "", 200
     now = datetime.datetime.now()
     weekday_idx = now.weekday()
     theme_name, _ = DAY_THEMES.get(weekday_idx, ("Daily Wisdom", ""))
@@ -41,12 +53,16 @@ def health():
     }), 200
 
 
-@app.route("/cron/daily", methods=["GET", "POST"])
+@app.route("/daily", methods=["GET", "POST", "HEAD"])
+@app.route("/cron/daily", methods=["GET", "POST", "HEAD"])
 def cron_trigger():
     """
     Webhook endpoint triggered daily by cron-job.org or UptimeRobot.
-    Usage: GET /cron/daily?secret=YOUR_SECRET
+    Usage: GET /cron/daily?secret=YOUR_SECRET (or GET /daily?secret=YOUR_SECRET)
     """
+    if request.method == "HEAD":
+        return "", 200
+
     secret = request.args.get("secret", "")
     if CRON_SECRET and secret != CRON_SECRET:
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
@@ -96,12 +112,17 @@ def cron_trigger():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route("/cron/sunday", methods=["GET", "POST"])
+@app.route("/sunday", methods=["GET", "POST", "HEAD"])
+@app.route("/cron/sunday", methods=["GET", "POST", "HEAD"])
 def cron_sunday_trigger():
     """
     Dedicated webhook endpoint for Sunday Reset execution.
     Can be scheduled for Sunday evenings (e.g. 6:00 PM EST).
+    Usage: GET /cron/sunday?secret=YOUR_SECRET (or GET /sunday?secret=YOUR_SECRET)
     """
+    if request.method == "HEAD":
+        return "", 200
+
     secret = request.args.get("secret", "")
     if CRON_SECRET and secret != CRON_SECRET:
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
