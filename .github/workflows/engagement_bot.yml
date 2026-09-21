@@ -1,0 +1,63 @@
+name: Daily Motivation Twitter Bot Stealth Engagement
+
+on:
+  schedule:
+    # Trigger 3 times daily at off-peak jittered times to avoid top-of-hour GitHub queue delays:
+    # 1. 15:23 UTC (approx 11:23 AM EDT / 8:23 AM PDT)
+    - cron: '23 15 * * *'
+    # 2. 19:41 UTC (approx 3:41 PM EDT / 12:41 PM PDT)
+    - cron: '41 19 * * *'
+    # 3. 23:17 UTC (approx 7:17 PM EDT / 4:17 PM PDT)
+    - cron: '17 23 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+jobs:
+  stealth-engage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Trigger Stealth Engagement via Webhook
+        env:
+          RENDER_SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$RENDER_SERVICE_URL" ]; then
+            echo "::error::No RENDER_SERVICE_URL configured. Go to Settings > Secrets and variables > Actions to add RENDER_SERVICE_URL and CRON_SECRET."
+            exit 1
+          fi
+
+          # Strip trailing slash if present
+          CLEAN_URL="${RENDER_SERVICE_URL%/}"
+
+          # Step 1: Apply random jitter delay for scheduled runs to randomize timing
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Random delay between 300s (5 min) and 2100s (35 min)
+            RANDOM_DELAY=$(( 300 + (RANDOM % 1800) ))
+            MINUTES=$(( RANDOM_DELAY / 60 ))
+            echo "⏰ Scheduled trigger: applying random jitter of ${RANDOM_DELAY}s (~${MINUTES} min) for organic timing..."
+            sleep $RANDOM_DELAY
+          else
+            echo "⚡ Manual trigger detected (workflow_dispatch). Executing immediately without delay."
+          fi
+
+          # Step 2: Wake up Render right before engaging (in case of cold sleep)
+          echo "Sending wake-up ping to ${CLEAN_URL}/ping..."
+          curl -sS -I --connect-timeout 60 --max-time 90 "${CLEAN_URL}/ping" || true
+
+          # Step 3: Trigger engagement endpoint (engaging with 2 random organic tweets)
+          ENDPOINT="${CLEAN_URL}/cron/engage"
+          echo "Triggering stealth engagement webhook: ${ENDPOINT}?count=2"
+          
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" --connect-timeout 60 --max-time 180 -X GET "${ENDPOINT}?secret=${CRON_SECRET}&count=2")
+          
+          HTTP_BODY=$(echo "$RESPONSE" | sed -e '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | cut -d: -f2)
+
+          echo "Response Body: $HTTP_BODY"
+          echo "Status Code: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Engagement webhook failed with HTTP status $HTTP_STATUS"
+            exit 1
+          fi
+          echo "Stealth engagement completed successfully!"

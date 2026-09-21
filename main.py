@@ -207,6 +207,42 @@ def test_ai_generator(theme: str = None):
         print("⚠ Character limit warning detected.")
 
 
+def view_replies_history():
+    """Display recent engagement replies logged in the database."""
+    replies = db_manager.get_recent_replies(limit=10)
+    print("=" * 60)
+    print("          RECENT ENGAGEMENT REPLIES")
+    print("=" * 60)
+    if not replies:
+        print("No engagement replies recorded yet.")
+        return
+
+    for i, item in enumerate(replies, 1):
+        print(f"[{i}] Date: {item['created_at']} | To: @{item['target_screen_name']}")
+        print(f"    Target Tweet ID: {item['target_tweet_id']}")
+        print(f"    Original: \"{item['original_tweet_text'][:80]}...\"")
+        print(f"    Reply ID: {item['reply_tweet_id']}")
+        print(f"    Our Reply: \"{item['reply_text']}\"")
+        print("-" * 60)
+
+
+def run_engagement_cli(count: int = 2, dry_run: bool = False, query: Optional[str] = None):
+    """Run the stealth engagement reply engine from the command line."""
+    results = twitter_client.run_engagement(
+        count=count,
+        dry_run=dry_run,
+        query_override=query
+    )
+    print("\n" + "=" * 60)
+    print("            ENGAGEMENT SUMMARY")
+    print("=" * 60)
+    print(f"Success:        {results.get('success', False)}")
+    print(f"Replies Posted: {results.get('replies_posted', 0)}")
+    if results.get("error"):
+        print(f"Error:          {results.get('error')}")
+    print("=" * 60)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Daily Motivation Twitter Bot CLI")
     parser.add_argument("--test-ai", nargs="?", const="Focus Friday", metavar="THEME", help="Test Groq quote generator live and verify character limits")
@@ -214,6 +250,10 @@ def main():
     parser.add_argument("--post-today", action="store_true", help="Post today's quote + card + backstory live to Twitter")
     parser.add_argument("--sunday-reset", action="store_true", help="Simulate Sunday Reset post and card preview")
     parser.add_argument("--post-sunday", action="store_true", help="Post Sunday Reset live to Twitter")
+    parser.add_argument("--engage", action="store_true", help="Run stealth human engagement reply engine")
+    parser.add_argument("--count", type=int, default=2, help="Number of replies for --engage (default: 2)")
+    parser.add_argument("--query", type=str, default=None, help="Specific search query override for --engage")
+    parser.add_argument("--replies", action="store_true", help="View recent engagement replies from database")
     parser.add_argument("--schedule", action="store_true", help="Start background daily scheduler (runs every day at --time)")
     parser.add_argument("--time", type=str, default="09:00", help="Posting time in 24h format for --schedule (default: 09:00)")
     parser.add_argument("--test-auth", action="store_true", help="Test Twitter, Database, and Groq AI credentials")
@@ -223,7 +263,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.test_ai:
+    if args.engage:
+        run_engagement_cli(count=args.count, dry_run=args.dry_run, query=args.query)
+    elif args.replies:
+        view_replies_history()
+    elif args.test_ai:
         test_ai_generator(args.test_ai)
     elif args.test_auth:
         run_test_auth()

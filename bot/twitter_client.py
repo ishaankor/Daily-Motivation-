@@ -182,5 +182,23 @@ class TwitterClient:
 
         return asyncio.run(_execute_post())
 
+    def run_engagement(
+        self,
+        count: int = 2,
+        dry_run: bool = False,
+        query_override: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Execute stealth human engagement cycle:
+        Finds organic tweets, generates fruitful peer replies, and posts safely.
+        """
+        from bot.reply_engine import run_engagement_cycle
+        return asyncio.run(run_engagement_cycle(
+            twikit_client=self.twikit_client,
+            count=count,
+            dry_run=dry_run,
+            query_override=query_override
+        ))
+
 
 twitter_client = TwitterClient()

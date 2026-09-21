@@ -1,0 +1,352 @@
+"""
+Stealth Engagement Reply Engine
+Discovers relevant organic tweets, filters for high-quality human targets,
+generates fruitful, non-bot peer replies via Groq LLM, and posts safely.
+"""
+
+import asyncio
+import random
+import re
+import time
+from typing import Dict, Any, List, Optional, Tuple
+
+from bot.config import twitter_config
+from bot.ai_generator import generate_human_reply
+from bot.database import db_manager
+
+
+NICHE_QUERIES = [
+    # Burnout & Exhaustion
+    '"feeling burnt out"',
+    '"mentally exhausted today"',
+    '"drained from work"',
+    '"so tired of working so hard"',
+    
+    # Consistency, Discipline & Habits
+    '"struggling with consistency" habits',
+    '"struggling with consistency" routine',
+    '"struggling to stay consistent"',
+    '"procrastinating on my"',
+    '"hard to stay focused today"',
+    '"need some discipline"',
+    '"trying to build good habits"',
+    
+    # Building, Indie Work & Ambition
+    '"building in public is tough"',
+    '"building in public is hard"',
+    '"imposter syndrome hitting"',
+    '"building a startup is tough"',
+    
+    # Life Perspective & Overcoming Slumps
+    '"feeling stuck in life"',
+    '"hard lesson I learned this year"',
+    '"overwhelmed with everything going on"'
+]
+
+BLACKLIST_TERMS = [
+    # Financial/Scam/Crypto/Trading
+    "crypto", "bitcoin", "btc", "eth", "solana", "airdrop", "nft", "token",
+    "giveaway", "win $", "free cash", "presale", "whitelist", "telegram",
+    "whatsapp", "dm me", "affiliate", "trading", "forex", "scalp", "scalping",
+    "signals", "long signal", "short signal", "sqqq", "tqqq", "pnl",
+    # Commercial Ads / Product Pitches
+    "meet the", "shop now", "discount", "coupon", "use code", "free shipping",
+    "pre-order", "special offer", "buy now", "link in bio",
+    # Sports Betting / Gambling
+    "bet", "bets", "betting", "parlay", "sportsbook", "gambling", "casino",
+    "laliga", "premier league", "nfl pick", "nba pick",
+    # Adult / Erotica / Dating / Smut
+    "onlyfans", "porn", "nsfw", "sex", "sexy", "bitch", "fuck", "horny",
+    "erotica", "smut", "kink", "bdsm", "fetish", "[mf]", "[ff]", "[mm]",
+    "18+", "🔞", "dating", "hookup", "sugar daddy", "findom", "lewd",
+    # Political / Controversy / Divisive
+    "trump", "biden", "democrat", "republican", "election", "kamala",
+    "war in", "israel", "palestine", "gaza", "ukraine", "russia"
+]
+
+
+def is_tweet_eligible(tweet, bot_handle: str) -> Tuple[bool, str]:
+    """
+    Apply strict anti-bot and quality filters to determine if a tweet is safe
+    and organic enough for a fruitful human peer reply.
+    """
+    # 0. Check Twitter's sensitive content flag
+    if getattr(tweet, "possibly_sensitive", False):
+        return False, "Twitter flagged tweet as possibly sensitive"
+
+    # 1. Check for replies or retweets
+    if getattr(tweet, "in_reply_to", None) is not None:
+        return False, "Tweet is a reply to someone else"
+
+    if getattr(tweet, "is_quote_status", False):
+        return False, "Tweet is a quote tweet"
+
+    if hasattr(tweet, "retweeted_tweet") and tweet.retweeted_tweet is not None:
+        return False, "Tweet is a retweet"
+
+    # 2. Check author
+    user = getattr(tweet, "user", None)
+    if not user:
+        return False, "Missing user object"
+
+    screen_name = getattr(user, "screen_name", "") or ""
+    display_name = getattr(user, "name", "") or ""
+    clean_bot = bot_handle.lstrip("@").lower()
+    if screen_name.lower() == clean_bot:
+        return False, "Cannot reply to self"
+
+    # Check user display name for adult / scam markers
+    combined_user_info = f"{screen_name} {display_name}".lower()
+    for adult_marker in ["18+", "nsfw", "onlyfans", "🔞", "erotica", "smut", "findom"]:
+        if adult_marker in combined_user_info:
+            return False, f"User profile contains adult marker: '{adult_marker}'"
+
+    # 3. Follower bounds (avoid bot farms with <10 followers and mega-influencers/brands >40k)
+    followers = getattr(user, "followers_count", 0) or 0
+    if followers < 10:
+        return False, f"User follower count too low ({followers}) - likely a bot or dormant"
+    if followers > 40000:
+        return False, f"User follower count too high ({followers}) - high risk of spam filters"
+
+    # 4. Reply count (we want threads where our reply will actually be read, not buried in hundreds)
+    reply_count = getattr(tweet, "reply_count", 0) or 0
+    if reply_count > 6:
+        return False, f"Too many replies ({reply_count}) - reply would get buried"
+
+    # 5. Text length and blacklist
+    text = getattr(tweet, "text", "") or getattr(tweet, "full_text", "") or ""
+    text_clean = text.strip()
+    if len(text_clean) < 35:
+        return False, "Tweet text too short (< 35 chars)"
+    if len(text_clean) > 500:
+        return False, "Tweet text too long"
+
+    # Check if tweet is mostly a link
+    links = re.findall(r"https?://\S+", text_clean)
+    text_without_links = re.sub(r"https?://\S+", "", text_clean).strip()
+    if links and len(text_without_links) < 25:
+        return False, "Tweet is primarily a link or promo"
+
+    # Ensure tweet is predominantly English text
+    ascii_chars = sum(1 for c in text_clean if ord(c) < 128)
+    if len(text_clean) > 0 and (ascii_chars / len(text_clean)) < 0.75:
+        return False, "Tweet is not predominantly in English"
+
+    text_lower = text_clean.lower()
+    for term in BLACKLIST_TERMS:
+        if term in text_lower:
+            return False, f"Contains blacklisted keyword: '{term}'"
+
+    # 6. Database deduplication (have we already engaged with this user or tweet?)
+    tweet_id = str(getattr(tweet, "id", ""))
+    if db_manager.has_replied_to_tweet(tweet_id):
+        return False, "Already replied to this tweet ID in database"
+
+    if db_manager.has_replied_to_user(screen_name, days=30):
+        return False, f"Already replied to @{screen_name} within the last 30 days"
+
+    return True, "Eligible"
+
+
+async def search_engagement_candidates(
+    twikit_client,
+    max_candidates: int = 5,
+    query_override: Optional[str] = None
+) -> List[Any]:
+    """
+    Search Twitter for organic candidate tweets matching reflective/struggle queries,
+    filtering for high-signal authentic human posts.
+    """
+    queries_to_try = [query_override] if query_override else random.sample(NICHE_QUERIES, min(3, len(NICHE_QUERIES)))
+    candidates = []
+    seen_ids = set()
+
+    for raw_query in queries_to_try:
+        if not raw_query:
+            continue
+        search_query = f"{raw_query} -filter:retweets lang:en"
+        print(f"\n[Engagement Search] Searching X with query: {search_query}...")
+
+        try:
+            results = await twikit_client.search_tweet(search_query, product="Latest", count=20)
+            if not results:
+                print("  -> No results returned for this query.")
+                continue
+
+            for tweet in results:
+                tweet_id = str(getattr(tweet, "id", ""))
+                if tweet_id in seen_ids:
+                    continue
+                seen_ids.add(tweet_id)
+
+                eligible, reason = is_tweet_eligible(tweet, twitter_config.handle)
+                screen_name = getattr(getattr(tweet, "user", None), "screen_name", "unknown")
+                if eligible:
+                    print(f"  ✓ Candidate found: @{screen_name} (ID: {tweet_id})")
+                    candidates.append(tweet)
+                    if len(candidates) >= max_candidates:
+                        return candidates
+                else:
+                    # Optional debug logging for skipped tweets
+                    pass
+
+        except Exception as e:
+            print(f"[Engagement Search] Error searching query '{raw_query}': {e}")
+
+        # Small pause between searches
+        await asyncio.sleep(2)
+
+    return candidates
+
+
+async def run_engagement_cycle(
+    twikit_client,
+    count: int = 2,
+    dry_run: bool = False,
+    query_override: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Execute a stealth engagement run:
+    1. Finds candidate tweets matching human struggle/reflection queries.
+    2. Generates an authentic, fruitful, human-sounding peer reply via Groq.
+    3. (In live mode) Likes tweet, waits human jitter delay, posts reply, and logs to database.
+    """
+    print("=" * 60)
+    mode_label = "DRY RUN (Preview Only)" if dry_run else "LIVE EXECUTION"
+    print(f"      STEALTH ENGAGEMENT ENGINE — {mode_label}")
+    print(f"      Target Count: {count} replies")
+    print("=" * 60)
+
+    if not twikit_client and not dry_run:
+        return {
+            "success": False,
+            "error": "Twitter client not authenticated. Run login.py first.",
+            "replies_posted": 0,
+            "engagements": []
+        }
+
+    # 1. Search candidates
+    candidates = await search_engagement_candidates(
+        twikit_client,
+        max_candidates=count + 2,
+        query_override=query_override
+    )
+
+    if not candidates:
+        print("\n[Engagement Info] No suitable candidate tweets found meeting all quality criteria.")
+        return {
+            "success": True,
+            "replies_posted": 0,
+            "engagements": [],
+            "message": "No eligible tweets found during search."
+        }
+
+    print(f"\n[Engagement Info] Selected {len(candidates)} candidates. Processing up to {count}...\n")
+    engagements = []
+    replies_count = 0
+
+    for idx, tweet in enumerate(candidates):
+        if replies_count >= count:
+            break
+
+        user = getattr(tweet, "user", None)
+        screen_name = getattr(user, "screen_name", "user")
+        name = getattr(user, "name", "")
+        followers = getattr(user, "followers_count", 0)
+        tweet_text = getattr(tweet, "text", "") or getattr(tweet, "full_text", "")
+        tweet_id = str(getattr(tweet, "id", ""))
+
+        print(f"--- CANDIDATE [{idx+1}] ---")
+        print(f"Author:    @{screen_name} ({name}) | Followers: {followers}")
+        print(f"Tweet ID:  {tweet_id}")
+        print(f"Content:   \"{tweet_text.strip()}\"")
+
+        # Generate fruitful human reply
+        print("\nGenerating organic peer reply via Groq...")
+        reply_text = generate_human_reply(tweet_text, author_name=name or screen_name)
+
+        if not reply_text:
+            print("❌ Failed to generate human reply. Skipping candidate.\n")
+            continue
+
+        print(f"\nProposed Reply ({len(reply_text)} chars):")
+        print(f"💬 \"{reply_text}\"\n")
+
+        engagement_record = {
+            "target_tweet_id": tweet_id,
+            "target_screen_name": screen_name,
+            "original_text": tweet_text.strip(),
+            "reply_text": reply_text,
+            "tweet_url": f"https://x.com/{screen_name}/status/{tweet_id}"
+        }
+
+        if dry_run:
+            print(f"[DRY RUN ACTIVE] Simulated reply to @{screen_name}. No actions sent to Twitter.")
+            engagement_record["reply_tweet_id"] = f"sim_reply_{int(time.time())}_{idx}"
+            engagements.append(engagement_record)
+            replies_count += 1
+            print("-" * 60 + "\n")
+            continue
+
+        # Live Execution Steps
+        try:
+            # Step A: Like the tweet first (mimic real human reading flow)
+            print(f"[Twitter] Liking tweet from @{screen_name}...")
+            try:
+                if hasattr(tweet, "favorite"):
+                    await tweet.favorite()
+                elif hasattr(twikit_client, "favorite_tweet"):
+                    await twikit_client.favorite_tweet(tweet_id)
+                print("  ✓ Liked target tweet.")
+            except Exception as e:
+                print(f"  ⚠ Could not favorite tweet (continuing anyway): {e}")
+
+            # Step B: Human reading/typing jitter delay (20 to 45 seconds)
+            jitter_sec = random.uniform(20.0, 45.0)
+            print(f"[Twitter] Human jitter delay: waiting {jitter_sec:.1f}s before sending reply...")
+            await asyncio.sleep(jitter_sec)
+
+            # Step C: Send reply
+            print(f"[Twitter] Posting reply to @{screen_name}...")
+            if hasattr(tweet, "reply"):
+                posted_reply = await tweet.reply(text=reply_text)
+                reply_id = str(getattr(posted_reply, "id", ""))
+            else:
+                posted_reply = await twikit_client.create_tweet(text=reply_text, reply_to=tweet_id)
+                reply_id = str(getattr(posted_reply, "id", ""))
+
+            print(f"  🎉 Reply live! ID: {reply_id}")
+            reply_url = f"https://x.com/{twitter_config.handle.strip('@')}/status/{reply_id}"
+            print(f"  URL: {reply_url}")
+
+            # Step D: Log to database
+            db_manager.log_reply(
+                target_tweet_id=tweet_id,
+                target_user_id=str(getattr(user, "id", "")),
+                target_screen_name=screen_name,
+                original_tweet_text=tweet_text,
+                reply_tweet_id=reply_id,
+                reply_text=reply_text
+            )
+
+            engagement_record["reply_tweet_id"] = reply_id
+            engagement_record["reply_url"] = reply_url
+            engagements.append(engagement_record)
+            replies_count += 1
+
+            # Step E: Cooldown pause before next candidate if processing more
+            if replies_count < count:
+                cooldown = random.uniform(30.0, 60.0)
+                print(f"[Twitter] Cooldown delay: waiting {cooldown:.1f}s before next interaction...")
+                await asyncio.sleep(cooldown)
+
+        except Exception as e:
+            print(f"❌ Error during live engagement with @{screen_name}: {e}")
+
+        print("-" * 60 + "\n")
+
+    return {
+        "success": True,
+        "replies_posted": replies_count,
+        "engagements": engagements
+    }

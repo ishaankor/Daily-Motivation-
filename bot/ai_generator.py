@@ -317,3 +317,86 @@ class QuotesCatalog:
         self.save()
         print(f"[Prefill] Successfully added {added} new quotes to catalog!")
         return added
+
+
+def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 2) -> Optional[str]:
+    """
+    Generate an organic, fruitful, human-sounding reply to a user's tweet.
+    Crafted to sound like a thoughtful peer browsing X, with zero bot markers.
+    """
+    if not ai_config.groq_api_key:
+        print("[AI Reply] No GROQ_API_KEY set.")
+        return None
+
+    headers = {
+        "Authorization": f"Bearer {ai_config.groq_api_key}",
+        "Content-Type": "application/json"
+    }
+
+    system_prompt = (
+        "You are the voice of an organic, thoughtful Twitter presence centered around daily mindset, resilience, and personal growth (@MotivationFTD). "
+        "You are replying to someone's real tweet about their struggles, fatigue, procrastination, or ambitions.\n\n"
+        "CORE MISSION: Strike the golden balance between WARM REASSURANCE and GROUNDED REAFFIRMATION. "
+        "Do NOT overdo it — never shout commands, never sound like a hyped-up drill sergeant, and never use multiple exclamation marks (avoid !! or aggressive phrasing like \"Stop doing X!\"). "
+        "Instead, sound like an observant, empathetic peer who takes the pressure off, de-escalates their anxiety, and leaves them with quiet confidence and an encouraging lift.\n\n"
+        "THE BALANCED STRUCTURE (1-2 sentences):\n"
+        "1. Sentence 1 (Reassurance): Acknowledge their situation with warm, realistic empathy to ease the burden.\n"
+        "2. Sentence 2 (Reaffirming lift): Reaffirm their effort, persistence, or capability with a single natural exclamation point (!) for an uplifting, supportive finish.\n\n"
+        "STRICT RULES:\n"
+        "- Use at most ONE natural exclamation mark (!) to close on an encouraging note without over-hyping.\n"
+        "- Never shout commands (avoid \"Stop doing X!\" or \"Don't give up!\").\n"
+        "- Strictly avoid corny clichés (\"Believe in yourself\", \"Rise and grind\", \"You got this\").\n"
+        "- Casual peer tone: Grounded, conversational, empathetic, and sharp.\n"
+        "- Emojis: Sparingly (0 or 1 max) and only casual ones if fitting (😭, 😂, 🥹, 🥲). No hype/bot emojis.\n"
+        "- Zero bot markers: No hashtags, no quotes from philosophers, no links, no self-promo, no greetings.\n"
+        "- Length: 1 to 2 short sentences ONLY (80 to 220 characters total).\n"
+        "- Output ONLY the reply text itself. No quotes, no markdown."
+    )
+
+    clean_tweet = tweet_text.strip()
+    user_prompt = f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n\nWrite a 1-2 sentence organic, fruitful reply:"
+
+    candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
+
+    for model in candidate_models:
+        for attempt in range(retries):
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.75,
+                "max_tokens": 300
+            }
+
+            try:
+                response = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=15
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    reply = data["choices"][0]["message"]["content"].strip()
+                    # Strip wrapping quotes if LLM added them
+                    if (reply.startswith('"') and reply.endswith('"')) or (reply.startswith("'") and reply.endswith("'")):
+                        reply = reply[1:-1].strip()
+
+                    # Enforce strict length and anti-bot checks
+                    if 30 <= len(reply) <= 270 and "#" not in reply and "http" not in reply:
+                        return reply
+                    else:
+                        print(f"[AI Reply] Reply failed quality/length check ({len(reply)} chars): '{reply}'. Retrying...")
+                else:
+                    print(f"[AI Reply] Groq error ({response.status_code}): {response.text}")
+                    time.sleep(1)
+
+            except Exception as e:
+                print(f"[AI Reply] Exception calling Groq ({model}): {e}")
+                time.sleep(1)
+
+    return None
+

@@ -202,6 +202,51 @@ def history():
     return jsonify({"count": len(posts), "posts": posts}), 200
 
 
+@app.route("/replies", methods=["GET"])
+def replies_history():
+    """View recent engagement replies from Supabase / SQLite."""
+    replies = db_manager.get_recent_replies(limit=15)
+    return jsonify({"count": len(replies), "replies": replies}), 200
+
+
+@app.route("/engage", methods=["GET", "POST", "HEAD"])
+@app.route("/cron/engage", methods=["GET", "POST", "HEAD"])
+def cron_engage_trigger():
+    """
+    Webhook endpoint to trigger stealth engagement reply run.
+    Usage: GET /cron/engage?secret=YOUR_SECRET&count=2
+    """
+    if request.method == "HEAD":
+        return "", 200
+
+    secret = request.args.get("secret", "")
+    if CRON_SECRET and secret != CRON_SECRET:
+        return jsonify({"error": "Unauthorized. Invalid secret."}), 401
+
+    try:
+        count_param = request.args.get("count", "2")
+        try:
+            count = min(max(int(count_param), 1), 3)  # Hard cap between 1 and 3 per run for safety
+        except ValueError:
+            count = 2
+
+        dry_run_param = request.args.get("dry_run", "false").lower()
+        dry_run = dry_run_param in ["true", "1", "yes"]
+        query_override = request.args.get("query", None)
+
+        result = twitter_client.run_engagement(
+            count=count,
+            dry_run=dry_run,
+            query_override=query_override
+        )
+
+        status_code = 200 if result.get("success") else 500
+        return jsonify(result), status_code
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
