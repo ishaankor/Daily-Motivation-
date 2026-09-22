@@ -319,10 +319,25 @@ class QuotesCatalog:
         return added
 
 
+BANNED_REPLY_STARTERS = (
+    "honestly,", "honestly ", "totally,", "totally ", "so true,", "so true ",
+    "i agree,", "i completely agree,", "it sounds like", "as someone who",
+    "remember,", "remember that", "that is the most", "it's the most",
+    "take a deep breath", "as they say"
+)
+
+BANNED_REPLY_CLICHES = [
+    "future self", "listen to your body", "give yourself permission",
+    "heavy mental load", "take a deep breath", "it's okay to not be okay",
+    "mental static", "prescription for", "nourish the soul", "doormat",
+    "crush it"
+]
+
+
 def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 2) -> Optional[str]:
     """
-    Generate an organic, fruitful, human-sounding reply to a user's tweet.
-    Crafted to sound like a thoughtful peer browsing X, with zero bot markers.
+    Generate a gentle, casual, and warmly motivational peer reply.
+    Observational and reassuring without giving bossy commands or aggressive advice.
     """
     if not ai_config.groq_api_key:
         print("[AI Reply] No GROQ_API_KEY set.")
@@ -334,27 +349,37 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
     }
 
     system_prompt = (
-        "You are the voice of an organic, thoughtful Twitter presence centered around daily mindset, resilience, and personal growth (@MotivationFTD). "
-        "You are replying to someone's real tweet about their struggles, fatigue, procrastination, or ambitions.\n\n"
-        "CORE MISSION: Strike the golden balance between WARM REASSURANCE and GROUNDED REAFFIRMATION. "
-        "Do NOT overdo it — never shout commands, never sound like a hyped-up drill sergeant, and never use multiple exclamation marks (avoid !! or aggressive phrasing like \"Stop doing X!\"). "
-        "Instead, sound like an observant, empathetic peer who takes the pressure off, de-escalates their anxiety, and leaves them with quiet confidence and an encouraging lift.\n\n"
-        "THE BALANCED STRUCTURE (1-2 sentences):\n"
-        "1. Sentence 1 (Reassurance): Acknowledge their situation with warm, realistic empathy to ease the burden.\n"
-        "2. Sentence 2 (Reaffirming lift): Reaffirm their effort, persistence, or capability with a single natural exclamation point (!) for an uplifting, supportive finish.\n\n"
-        "STRICT RULES:\n"
-        "- Use at most ONE natural exclamation mark (!) to close on an encouraging note without over-hyping.\n"
-        "- Never shout commands (avoid \"Stop doing X!\" or \"Don't give up!\").\n"
-        "- Strictly avoid corny clichés (\"Believe in yourself\", \"Rise and grind\", \"You got this\").\n"
-        "- Casual peer tone: Grounded, conversational, empathetic, and sharp.\n"
-        "- Emojis: Sparingly (0 or 1 max) and only casual ones if fitting (😭, 😂, 🥹, 🥲). No hype/bot emojis.\n"
-        "- Zero bot markers: No hashtags, no quotes from philosophers, no links, no self-promo, no greetings.\n"
-        "- Length: 1 to 2 short sentences ONLY (80 to 220 characters total).\n"
-        "- Output ONLY the reply text itself. No quotes, no markdown."
+        "You are the voice of Daily Motivation (@MotivationFTD) on X (Twitter).\n"
+        "Your tone is CASUAL, GENTLE, GROUNDED, and WARM. NEVER ASSERTIVE, BOSSY, OR AGGRESSIVE.\n\n"
+        "MISSION: Offer quiet encouragement, reassurance, or a gentle reframe like a thoughtful friend nodding along on the timeline.\n\n"
+        "CRITICAL RULES — AVOID BEING TOO ASSERTIVE:\n"
+        "- NO DIRECT COMMANDS: Never tell them what to do (avoid: 'do it', 'go do X', 'stop doing Y', 'skip the grind', 'wake up ready to crush it', 'be a doormat').\n"
+        "- NO AGGRESSIVE HYPE: Don't push people to 'grind' or 'crush it' when they are exhausted. Avoid exclamation marks (!).\n"
+        "- GENTLE OBSERVATIONS: Instead of giving orders, share a warm, grounded perspective or quiet validation.\n"
+        "- NO THERAPIST SPEAK: Never say 'give yourself permission', 'your future self will thank you', 'heavy mental load', 'listen to your body'.\n"
+        "- NO ESSAY METAPHORS: Never say 'mental static', 'prescription for exhaustion', 'nourish the soul'.\n"
+        "- NO CORNY OPENERS: Never start with 'Honestly,', 'Totally,', 'So true,', 'I agree,'.\n\n"
+        "AUTHENTIC GENTLE EXAMPLES:\n"
+        "- Tweet: 'I have coffee and a good breakfast but I am still dragging ass today. mentally exhausted. need a nature reset.'\n"
+        "  Reply: 'sometimes the body just needs to slow way down before it can go again. hope you get that peaceful reset you need'\n"
+        "- Tweet: 'all I want is comfort food and sleep today'\n"
+        "  Reply: 'there is no guilt in trading productivity for a warm meal and good sleep. recharge days are just as important as the work'\n"
+        "- Tweet: 'struggling to stay consistent with my morning routine lately. feel like I fell off.'\n"
+        "  Reply: 'the days you miss don\\'t erase all the days you showed up. it\\'s always just one morning at a time'\n"
+        "- Tweet: 'hard to stay focused today'\n"
+        "  Reply: 'some days the focus just isn\\'t there and that\\'s okay. even moving the needle an inch still counts'\n"
+        "- Tweet: 'building in public is tough'\n"
+        "  Reply: 'the building phase is always quiet and slow. proud of you for showing up even when it\\'s tough'\n"
+        "- Tweet: 'drained from work'\n"
+        "  Reply: 'hope you get to unplug tonight and get some quiet time. you need that energy for the things that matter to you'\n\n"
+        "FORMAT & STYLE:\n"
+        "- Casual, conversational lowercase or relaxed casing.\n"
+        "- 1 to 2 short sentences (50 to 125 characters).\n"
+        "- Output ONLY the reply text itself. No quotes, no hashtags, no links."
     )
 
     clean_tweet = tweet_text.strip()
-    user_prompt = f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n\nWrite a 1-2 sentence organic, fruitful reply:"
+    user_prompt = f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n\nWrite a gentle, casual, non-assertive motivational reply:"
 
     candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
 
@@ -366,8 +391,8 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.75,
-                "max_tokens": 300
+                "temperature": 0.85,
+                "max_tokens": 150
             }
 
             try:
@@ -385,8 +410,18 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                     if (reply.startswith('"') and reply.endswith('"')) or (reply.startswith("'") and reply.endswith("'")):
                         reply = reply[1:-1].strip()
 
-                    # Enforce strict length and anti-bot checks
-                    if 30 <= len(reply) <= 270 and "#" not in reply and "http" not in reply:
+                    reply_lower = reply.lower().strip()
+
+                    # Enforce anti-bot filters
+                    if any(reply_lower.startswith(starter) for starter in BANNED_REPLY_STARTERS):
+                        print(f"[AI Reply] Rejected banned starter in reply: '{reply}'. Retrying...")
+                        continue
+
+                    if any(cliche in reply_lower for cliche in BANNED_REPLY_CLICHES):
+                        print(f"[AI Reply] Rejected cliché in reply: '{reply}'. Retrying...")
+                        continue
+
+                    if 15 <= len(reply) <= 220 and "#" not in reply and "http" not in reply:
                         return reply
                     else:
                         print(f"[AI Reply] Reply failed quality/length check ({len(reply)} chars): '{reply}'. Retrying...")

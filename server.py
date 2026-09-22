@@ -234,10 +234,19 @@ def cron_engage_trigger():
         dry_run = dry_run_param in ["true", "1", "yes"]
         query_override = request.args.get("query", None)
 
+        max_age_param = request.args.get("max_age", None) or request.args.get("max_age_hours", None)
+        max_age_hours = None
+        if max_age_param:
+            try:
+                max_age_hours = float(max_age_param)
+            except ValueError:
+                max_age_hours = None
+
         result = twitter_client.run_engagement(
             count=count,
             dry_run=dry_run,
-            query_override=query_override
+            query_override=query_override,
+            max_age_hours=max_age_hours
         )
 
         status_code = 200 if result.get("success") else 500

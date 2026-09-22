@@ -5,6 +5,8 @@ generates fruitful, non-bot peer replies via Groq LLM, and posts safely.
 """
 
 import asyncio
+import datetime
+import email.utils
 import random
 import re
 import time
@@ -18,16 +20,15 @@ from bot.database import db_manager
 NICHE_QUERIES = [
     # Burnout & Exhaustion
     '"feeling burnt out"',
-    '"mentally exhausted today"',
+    '"mentally exhausted"',
     '"drained from work"',
     '"so tired of working so hard"',
     
     # Consistency, Discipline & Habits
-    '"struggling with consistency" habits',
-    '"struggling with consistency" routine',
     '"struggling to stay consistent"',
+    '"struggling with consistency"',
     '"procrastinating on my"',
-    '"hard to stay focused today"',
+    '"hard to stay focused"',
     '"need some discipline"',
     '"trying to build good habits"',
     
@@ -39,21 +40,24 @@ NICHE_QUERIES = [
     
     # Life Perspective & Overcoming Slumps
     '"feeling stuck in life"',
-    '"hard lesson I learned this year"',
+    '"hard lesson I learned"',
     '"overwhelmed with everything going on"'
 ]
 
 BLACKLIST_TERMS = [
-    # Financial/Scam/Crypto/Trading
+    # Financial/Scam/Crypto/Trading/Solicitation
     "crypto", "bitcoin", "btc", "eth", "solana", "airdrop", "nft", "token",
     "giveaway", "win $", "free cash", "presale", "whitelist", "telegram",
     "whatsapp", "dm me", "affiliate", "trading", "forex", "scalp", "scalping",
     "signals", "long signal", "short signal", "sqqq", "tqqq", "pnl",
+    "send money", "amount of money", "need money", "send cash", "cash app",
+    "cashapp", "venmo", "paypal", "gofundme", "donate to",
     # Commercial Ads / Product Pitches
     "meet the", "shop now", "discount", "coupon", "use code", "free shipping",
-    "pre-order", "special offer", "buy now", "link in bio",
+    "pre-order", "special offer", "buy now", "link in bio", "sponsored", "#ad",
     # Sports Betting / Gambling
     "bet", "bets", "betting", "parlay", "sportsbook", "gambling", "casino",
+    "stake now", "on stake", "stake.com", "stake casino",
     "laliga", "premier league", "nfl pick", "nba pick",
     # Adult / Erotica / Dating / Smut
     "onlyfans", "porn", "nsfw", "sex", "sexy", "bitch", "fuck", "horny",
@@ -65,12 +69,85 @@ BLACKLIST_TERMS = [
 ]
 
 
-def is_tweet_eligible(tweet, bot_handle: str) -> Tuple[bool, str]:
+def get_tweet_created_at(tweet) -> Optional[datetime.datetime]:
     """
-    Apply strict anti-bot and quality filters to determine if a tweet is safe
-    and organic enough for a fruitful human peer reply.
+    Extract the UTC creation timestamp for a tweet across various client formats:
+    1. tweet.created_at_datetime (twikit's native datetime property)
+    2. tweet.created_at (Twitter timestamp string or ISO format)
+    3. Snowflake ID bitwise decoding (guaranteed fallback for valid numeric tweet IDs)
     """
-    # 0. Check Twitter's sensitive content flag
+    # 1. Check created_at_datetime property
+    dt = getattr(tweet, "created_at_datetime", None)
+    if isinstance(dt, datetime.datetime):
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=datetime.timezone.utc)
+        return dt.astimezone(datetime.timezone.utc)
+
+    # 2. Check created_at string
+    raw_created = getattr(tweet, "created_at", None)
+    if isinstance(raw_created, str) and raw_created.strip():
+        # Try standard Twitter format: "Wed Sep 22 15:00:00 +0000 2026"
+        try:
+            parsed = datetime.datetime.strptime(raw_created.strip(), "%a %b %d %H:%M:%S %z %Y")
+            return parsed.astimezone(datetime.timezone.utc)
+        except Exception:
+            pass
+
+        # Try RFC 2822 / email format
+        try:
+            parsed = email.utils.parsedate_to_datetime(raw_created.strip())
+            if parsed:
+                if parsed.tzinfo is None:
+                    return parsed.replace(tzinfo=datetime.timezone.utc)
+                return parsed.astimezone(datetime.timezone.utc)
+        except Exception:
+            pass
+
+        # Try ISO 8601
+        try:
+            parsed = datetime.datetime.fromisoformat(raw_created.strip())
+            if parsed:
+                if parsed.tzinfo is None:
+                    return parsed.replace(tzinfo=datetime.timezone.utc)
+                return parsed.astimezone(datetime.timezone.utc)
+        except Exception:
+            pass
+
+    # 3. Twitter Snowflake ID calculation
+    # Snowflake ID timestamp (ms) = (id >> 22) + 1288834974657
+    raw_id = getattr(tweet, "id", None)
+    if raw_id is not None:
+        try:
+            numeric_id = int(str(raw_id).strip())
+            if numeric_id > 10000000000:
+                ts_ms = (numeric_id >> 22) + 1288834974657
+                return datetime.datetime.fromtimestamp(ts_ms / 1000.0, tz=datetime.timezone.utc)
+        except Exception:
+            pass
+
+    return None
+
+
+def is_tweet_eligible(
+    tweet,
+    bot_handle: str,
+    max_age_hours: Optional[float] = None
+) -> Tuple[bool, str]:
+    """
+    Apply strict anti-bot, freshness, and quality filters to determine if a tweet
+    is safe, organic, and recent enough for a fruitful human peer reply.
+    """
+    # 0. Check tweet recency / age (ensure we only reply to fresh tweets, never days-old)
+    effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
+    created_at_dt = get_tweet_created_at(tweet)
+    if created_at_dt is not None:
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        age_seconds = (now_utc - created_at_dt).total_seconds()
+        age_hours = max(0.0, age_seconds / 3600.0)
+        if age_hours > effective_max_age:
+            return False, f"Tweet is too old ({age_hours:.1f}h ago, max allowed: {effective_max_age:.1f}h)"
+
+    # 1. Check Twitter's sensitive content flag
     if getattr(tweet, "possibly_sensitive", False):
         return False, "Twitter flagged tweet as possibly sensitive"
 
@@ -151,20 +228,26 @@ def is_tweet_eligible(tweet, bot_handle: str) -> Tuple[bool, str]:
 async def search_engagement_candidates(
     twikit_client,
     max_candidates: int = 5,
-    query_override: Optional[str] = None
+    query_override: Optional[str] = None,
+    max_age_hours: Optional[float] = None
 ) -> List[Any]:
     """
     Search Twitter for organic candidate tweets matching reflective/struggle queries,
-    filtering for high-signal authentic human posts.
+    filtering strictly for recent (under max_age_hours) high-signal authentic human posts.
     """
-    queries_to_try = [query_override] if query_override else random.sample(NICHE_QUERIES, min(3, len(NICHE_QUERIES)))
+    effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    # Ensure Twitter search query only scans recent 24-48h window
+    since_date = (now_utc - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+    queries_to_try = [query_override] if query_override else random.sample(NICHE_QUERIES, min(4, len(NICHE_QUERIES)))
     candidates = []
     seen_ids = set()
 
     for raw_query in queries_to_try:
         if not raw_query:
             continue
-        search_query = f"{raw_query} -filter:retweets lang:en"
+        search_query = f"{raw_query} -filter:retweets lang:en since:{since_date}"
         print(f"\n[Engagement Search] Searching X with query: {search_query}...")
 
         try:
@@ -179,42 +262,65 @@ async def search_engagement_candidates(
                     continue
                 seen_ids.add(tweet_id)
 
-                eligible, reason = is_tweet_eligible(tweet, twitter_config.handle)
+                eligible, reason = is_tweet_eligible(
+                    tweet,
+                    twitter_config.handle,
+                    max_age_hours=effective_max_age
+                )
                 screen_name = getattr(getattr(tweet, "user", None), "screen_name", "unknown")
-                if eligible:
-                    print(f"  ✓ Candidate found: @{screen_name} (ID: {tweet_id})")
-                    candidates.append(tweet)
-                    if len(candidates) >= max_candidates:
-                        return candidates
+                created_dt = get_tweet_created_at(tweet)
+                if created_dt:
+                    age_h = max(0.0, (now_utc - created_dt).total_seconds() / 3600.0)
+                    age_str = f"{age_h:.1f}h ago" if age_h >= 1.0 else f"{int(age_h * 60)}m ago"
                 else:
-                    # Optional debug logging for skipped tweets
+                    age_str = "recent"
+
+                if eligible:
+                    print(f"  ✓ Candidate found: @{screen_name} ({age_str} | ID: {tweet_id})")
+                    candidates.append(tweet)
+                    if len(candidates) >= max_candidates * 2:
+                        break
+                else:
+                    # Debug logging for skipped tweets
                     pass
 
         except Exception as e:
             print(f"[Engagement Search] Error searching query '{raw_query}': {e}")
 
+        # If we have enough fresh candidates, we can stop querying
+        if len(candidates) >= max_candidates * 2:
+            break
+
         # Small pause between searches
         await asyncio.sleep(2)
 
-    return candidates
+    # Sort all discovered candidates strictly by creation time descending (newest tweets first)
+    def _tweet_timestamp(t):
+        dt = get_tweet_created_at(t)
+        return dt.timestamp() if dt else 0.0
+
+    candidates.sort(key=_tweet_timestamp, reverse=True)
+    return candidates[:max_candidates]
 
 
 async def run_engagement_cycle(
     twikit_client,
     count: int = 2,
     dry_run: bool = False,
-    query_override: Optional[str] = None
+    query_override: Optional[str] = None,
+    max_age_hours: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Execute a stealth engagement run:
-    1. Finds candidate tweets matching human struggle/reflection queries.
+    1. Finds strictly recent candidate tweets matching human struggle/reflection queries.
     2. Generates an authentic, fruitful, human-sounding peer reply via Groq.
     3. (In live mode) Likes tweet, waits human jitter delay, posts reply, and logs to database.
     """
+    effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
     print("=" * 60)
     mode_label = "DRY RUN (Preview Only)" if dry_run else "LIVE EXECUTION"
     print(f"      STEALTH ENGAGEMENT ENGINE — {mode_label}")
-    print(f"      Target Count: {count} replies")
+    print(f"      Target Count: {count} replies | Max Allowed Age: {effective_max_age:.1f}h")
     print("=" * 60)
 
     if not twikit_client and not dry_run:
@@ -225,15 +331,16 @@ async def run_engagement_cycle(
             "engagements": []
         }
 
-    # 1. Search candidates
+    # 1. Search candidates (prioritizing most recent)
     candidates = await search_engagement_candidates(
         twikit_client,
         max_candidates=count + 2,
-        query_override=query_override
+        query_override=query_override,
+        max_age_hours=effective_max_age
     )
 
     if not candidates:
-        print("\n[Engagement Info] No suitable candidate tweets found meeting all quality criteria.")
+        print("\n[Engagement Info] No suitable candidate tweets found meeting all quality and recency criteria.")
         return {
             "success": True,
             "replies_posted": 0,

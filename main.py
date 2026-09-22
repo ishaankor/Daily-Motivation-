@@ -226,12 +226,18 @@ def view_replies_history():
         print("-" * 60)
 
 
-def run_engagement_cli(count: int = 2, dry_run: bool = False, query: Optional[str] = None):
+def run_engagement_cli(
+    count: int = 2,
+    dry_run: bool = False,
+    query: Optional[str] = None,
+    max_age_hours: Optional[float] = None
+):
     """Run the stealth engagement reply engine from the command line."""
     results = twitter_client.run_engagement(
         count=count,
         dry_run=dry_run,
-        query_override=query
+        query_override=query,
+        max_age_hours=max_age_hours
     )
     print("\n" + "=" * 60)
     print("            ENGAGEMENT SUMMARY")
@@ -253,6 +259,7 @@ def main():
     parser.add_argument("--engage", action="store_true", help="Run stealth human engagement reply engine")
     parser.add_argument("--count", type=int, default=2, help="Number of replies for --engage (default: 2)")
     parser.add_argument("--query", type=str, default=None, help="Specific search query override for --engage")
+    parser.add_argument("--max-age", type=float, default=None, help="Max tweet age in hours for --engage (default: 12h from config)")
     parser.add_argument("--replies", action="store_true", help="View recent engagement replies from database")
     parser.add_argument("--schedule", action="store_true", help="Start background daily scheduler (runs every day at --time)")
     parser.add_argument("--time", type=str, default="09:00", help="Posting time in 24h format for --schedule (default: 09:00)")
@@ -264,7 +271,12 @@ def main():
     args = parser.parse_args()
 
     if args.engage:
-        run_engagement_cli(count=args.count, dry_run=args.dry_run, query=args.query)
+        run_engagement_cli(
+            count=args.count,
+            dry_run=args.dry_run,
+            query=args.query,
+            max_age_hours=args.max_age
+        )
     elif args.replies:
         view_replies_history()
     elif args.test_ai:

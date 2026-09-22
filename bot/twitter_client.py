@@ -186,7 +186,8 @@ class TwitterClient:
         self,
         count: int = 2,
         dry_run: bool = False,
-        query_override: Optional[str] = None
+        query_override: Optional[str] = None,
+        max_age_hours: Optional[float] = None
     ) -> Dict[str, Any]:
         """
         Execute stealth human engagement cycle:
@@ -197,7 +198,8 @@ class TwitterClient:
             twikit_client=self.twikit_client,
             count=count,
             dry_run=dry_run,
-            query_override=query_override
+            query_override=query_override,
+            max_age_hours=max_age_hours
         ))
 
 
