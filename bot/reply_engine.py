@@ -22,26 +22,31 @@ NICHE_QUERIES = [
     '"feeling burnt out"',
     '"mentally exhausted"',
     '"drained from work"',
+    '"exhausted from work"',
+    '"burnt out today"',
     '"so tired of working so hard"',
     
     # Consistency, Discipline & Habits
     '"struggling to stay consistent"',
     '"struggling with consistency"',
-    '"procrastinating on my"',
+    '"procrastinating on"',
     '"hard to stay focused"',
     '"need some discipline"',
     '"trying to build good habits"',
+    '"cant focus today"',
+    '"zero motivation today"',
     
     # Building, Indie Work & Ambition
-    '"building in public is tough"',
-    '"building in public is hard"',
+    '"building in public"',
     '"imposter syndrome hitting"',
-    '"building a startup is tough"',
+    '"building a startup"',
+    '"solo founder"',
+    '"indie hacker"',
     
     # Life Perspective & Overcoming Slumps
     '"feeling stuck in life"',
-    '"hard lesson I learned"',
-    '"overwhelmed with everything going on"'
+    '"feeling so overwhelmed"',
+    '"overwhelmed with everything"'
 ]
 
 BLACKLIST_TERMS = [
@@ -52,9 +57,14 @@ BLACKLIST_TERMS = [
     "signals", "long signal", "short signal", "sqqq", "tqqq", "pnl",
     "send money", "amount of money", "need money", "send cash", "cash app",
     "cashapp", "venmo", "paypal", "gofundme", "donate to",
-    # Commercial Ads / Product Pitches
+    # Commercial Ads, Deals & Product Pitches
     "meet the", "shop now", "discount", "coupon", "use code", "free shipping",
     "pre-order", "special offer", "buy now", "link in bio", "sponsored", "#ad",
+    "deals", "todays deals", "today's deals", "flash sale", "on sale", "clearance",
+    "order now", "dm to order", "dm to buy", "dm for pricing", "pricing:",
+    # Psychic / Tarot / Astrology / Spiritual Solicitations
+    "tarot", "psychic", "readings", "natal chart", "horoscope", "spell casting",
+    "spells", "astrology reading", "energy reading", "soulmate reading", "love reading",
     # Sports Betting / Gambling
     "bet", "bets", "betting", "parlay", "sportsbook", "gambling", "casino",
     "stake now", "on stake", "stake.com", "stake casino",
@@ -140,12 +150,14 @@ def is_tweet_eligible(
     # 0. Check tweet recency / age (ensure we only reply to fresh tweets, never days-old)
     effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
     created_at_dt = get_tweet_created_at(tweet)
-    if created_at_dt is not None:
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
-        age_seconds = (now_utc - created_at_dt).total_seconds()
-        age_hours = max(0.0, age_seconds / 3600.0)
-        if age_hours > effective_max_age:
-            return False, f"Tweet is too old ({age_hours:.1f}h ago, max allowed: {effective_max_age:.1f}h)"
+    if created_at_dt is None:
+        return False, "Cannot verify tweet creation timestamp"
+
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    age_seconds = (now_utc - created_at_dt).total_seconds()
+    age_hours = max(0.0, age_seconds / 3600.0)
+    if age_hours > effective_max_age:
+        return False, f"Tweet is too old ({age_hours:.1f}h ago, max allowed: {effective_max_age:.1f}h)"
 
     # 1. Check Twitter's sensitive content flag
     if getattr(tweet, "possibly_sensitive", False):
@@ -214,6 +226,10 @@ def is_tweet_eligible(
         if term in text_lower:
             return False, f"Contains blacklisted keyword: '{term}'"
 
+    # Check for commercial pricing patterns (e.g. $28, $19.99, $500)
+    if re.search(r"\$\s*\d+", text_clean):
+        return False, "Tweet contains monetary price / commercial offer ($XX)"
+
     # 6. Database deduplication (have we already engaged with this user or tweet?)
     tweet_id = str(getattr(tweet, "id", ""))
     if db_manager.has_replied_to_tweet(tweet_id):
@@ -237,8 +253,6 @@ async def search_engagement_candidates(
     """
     effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
     now_utc = datetime.datetime.now(datetime.timezone.utc)
-    # Ensure Twitter search query only scans recent 24-48h window
-    since_date = (now_utc - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
     queries_to_try = [query_override] if query_override else random.sample(NICHE_QUERIES, min(4, len(NICHE_QUERIES)))
     candidates = []
@@ -247,7 +261,7 @@ async def search_engagement_candidates(
     for raw_query in queries_to_try:
         if not raw_query:
             continue
-        search_query = f"{raw_query} -filter:retweets lang:en since:{since_date}"
+        search_query = f"{raw_query} -filter:retweets lang:en"
         print(f"\n[Engagement Search] Searching X with query: {search_query}...")
 
         try:

@@ -23,7 +23,7 @@ class TwitterConfig:
     client_secret: str = os.getenv("CLIENT_SECRET", "")
     account_id: str = os.getenv("ACCOUNT_ID", "")
     handle: str = os.getenv("HANDLE", "@MotivationFTD")
-    engagement_max_age_hours: float = float(os.getenv("ENGAGEMENT_MAX_AGE_HOURS", "12.0"))
+    engagement_max_age_hours: float = float(os.getenv("ENGAGEMENT_MAX_AGE_HOURS", "6.0"))
 
 
 @dataclass(frozen=True)
