@@ -25,6 +25,7 @@ class TwitterConfig:
     handle: str = os.getenv("HANDLE", "@MotivationFTD")
     engagement_max_age_hours: float = float(os.getenv("ENGAGEMENT_MAX_AGE_HOURS", "6.0"))
     engagement_enabled: bool = os.getenv("ENABLE_ENGAGEMENT", "false").strip().lower() in ("true", "1", "yes")
+    daily_posting_enabled: bool = os.getenv("ENABLE_DAILY_POSTING", "false").strip().lower() in ("true", "1", "yes")
 
 
 @dataclass(frozen=True)

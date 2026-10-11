@@ -67,6 +67,13 @@ def cron_trigger():
     if CRON_SECRET and secret != CRON_SECRET:
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
 
+    if not twitter_config.daily_posting_enabled:
+        return jsonify({
+            "success": False,
+            "paused": True,
+            "message": "Daily posting is paused for account safety during cooling-off period. Set ENABLE_DAILY_POSTING=true to re-enable."
+        }), 200
+
     try:
         now = datetime.datetime.now()
         weekday_idx = now.weekday()
@@ -126,6 +133,13 @@ def cron_sunday_trigger():
     secret = request.args.get("secret", "")
     if CRON_SECRET and secret != CRON_SECRET:
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
+
+    if not twitter_config.daily_posting_enabled:
+        return jsonify({
+            "success": False,
+            "paused": True,
+            "message": "Sunday Reset posting is paused for account safety during cooling-off period. Set ENABLE_DAILY_POSTING=true to re-enable."
+        }), 200
 
     try:
         now = datetime.datetime.now()

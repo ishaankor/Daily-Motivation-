@@ -1,11 +1,13 @@
-name: Daily Motivation Twitter Bot Cron
+name: Daily Motivation Twitter Bot Cron (PAUSED)
 
+# SCHEDULE PAUSED: Paused during account cooling-off period to clear ghost ban.
+# To re-enable, uncomment the schedule block below.
 on:
-  schedule:
-    # Monday through Saturday at 9:00 AM EST (13:00 UTC)
-    - cron: '0 13 * * 1-6'
-    # Sunday Reset at 6:00 PM EST (22:00 UTC)
-    - cron: '0 22 * * 0'
+  # schedule:
+  #   # Monday through Saturday at 9:00 AM EST (13:00 UTC)
+  #   - cron: '0 13 * * 1-6'
+  #   # Sunday Reset at 6:00 PM EST (22:00 UTC)
+  #   - cron: '0 22 * * 0'
   workflow_dispatch: # Allows manual trigger from GitHub UI anytime
 
 jobs:
