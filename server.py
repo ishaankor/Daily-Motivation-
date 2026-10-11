@@ -223,6 +223,13 @@ def cron_engage_trigger():
     if CRON_SECRET and secret != CRON_SECRET:
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
 
+    if not twitter_config.engagement_enabled:
+        return jsonify({
+            "success": False,
+            "disabled": True,
+            "message": "Stealth engagement engine is paused for account safety. Set ENABLE_ENGAGEMENT=true to re-enable."
+        }), 200
+
     try:
         count_param = request.args.get("count", "2")
         try:

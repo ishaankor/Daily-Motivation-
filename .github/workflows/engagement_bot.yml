@@ -1,15 +1,17 @@
-name: Daily Motivation Twitter Bot Stealth Engagement
+name: Daily Motivation Twitter Bot Stealth Engagement (PAUSED)
 
+# SCHEDULE PAUSED: Disabled to prevent shadowban/ghost ban penalties.
+# To re-enable, uncomment the schedule block below after the account cooling-off period.
 on:
-  schedule:
-    # Trigger 3 times daily at off-peak jittered times to avoid top-of-hour GitHub queue delays:
-    # 1. 15:23 UTC (approx 11:23 AM EDT / 8:23 AM PDT)
-    - cron: '23 15 * * *'
-    # 2. 19:41 UTC (approx 3:41 PM EDT / 12:41 PM PDT)
-    - cron: '41 19 * * *'
-    # 3. 23:17 UTC (approx 7:17 PM EDT / 4:17 PM PDT)
-    - cron: '17 23 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+  # schedule:
+  #   # Trigger 3 times daily at off-peak jittered times:
+  #   # 1. 15:23 UTC (approx 11:23 AM EDT / 8:23 AM PDT)
+  #   - cron: '23 15 * * *'
+  #   # 2. 19:41 UTC (approx 3:41 PM EDT / 12:41 PM PDT)
+  #   - cron: '41 19 * * *'
+  #   # 3. 23:17 UTC (approx 7:17 PM EDT / 4:17 PM PDT)
+  #   - cron: '17 23 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI if explicitly tested
 
 jobs:
   stealth-engage:
