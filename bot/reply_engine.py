@@ -18,7 +18,6 @@ from bot.database import db_manager
 
 
 NICHE_QUERIES = [
-    # Burnout & Exhaustion
     '"feeling burnt out"',
     '"mentally exhausted"',
     '"drained from work"',
@@ -26,7 +25,6 @@ NICHE_QUERIES = [
     '"burnt out today"',
     '"so tired of working so hard"',
     
-    # Consistency, Discipline & Habits
     '"struggling to stay consistent"',
     '"struggling with consistency"',
     '"procrastinating on"',
@@ -36,14 +34,12 @@ NICHE_QUERIES = [
     '"cant focus today"',
     '"zero motivation today"',
     
-    # Building, Indie Work & Ambition
     '"building in public"',
     '"imposter syndrome hitting"',
     '"building a startup"',
     '"solo founder"',
     '"indie hacker"',
     
-    # Life Perspective & Overcoming Slumps
     '"feeling stuck in life"',
     '"feeling so overwhelmed"',
     '"overwhelmed with everything"'
