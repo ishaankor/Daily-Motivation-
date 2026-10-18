@@ -46,30 +46,24 @@ NICHE_QUERIES = [
 ]
 
 BLACKLIST_TERMS = [
-    # Financial/Scam/Crypto/Trading/Solicitation
     "crypto", "bitcoin", "btc", "eth", "solana", "airdrop", "nft", "token",
     "giveaway", "win $", "free cash", "presale", "whitelist", "telegram",
     "whatsapp", "dm me", "affiliate", "trading", "forex", "scalp", "scalping",
     "signals", "long signal", "short signal", "sqqq", "tqqq", "pnl",
     "send money", "amount of money", "need money", "send cash", "cash app",
     "cashapp", "venmo", "paypal", "gofundme", "donate to",
-    # Commercial Ads, Deals & Product Pitches
     "meet the", "shop now", "discount", "coupon", "use code", "free shipping",
     "pre-order", "special offer", "buy now", "link in bio", "sponsored", "#ad",
     "deals", "todays deals", "today's deals", "flash sale", "on sale", "clearance",
     "order now", "dm to order", "dm to buy", "dm for pricing", "pricing:",
-    # Psychic / Tarot / Astrology / Spiritual Solicitations
     "tarot", "psychic", "readings", "natal chart", "horoscope", "spell casting",
     "spells", "astrology reading", "energy reading", "soulmate reading", "love reading",
-    # Sports Betting / Gambling
     "bet", "bets", "betting", "parlay", "sportsbook", "gambling", "casino",
     "stake now", "on stake", "stake.com", "stake casino",
     "laliga", "premier league", "nfl pick", "nba pick",
-    # Adult / Erotica / Dating / Smut
     "onlyfans", "porn", "nsfw", "sex", "sexy", "bitch", "fuck", "horny",
     "erotica", "smut", "kink", "bdsm", "fetish", "[mf]", "[ff]", "[mm]",
     "18+", "🔞", "dating", "hookup", "sugar daddy", "findom", "lewd",
-    # Political / Controversy / Divisive
     "trump", "biden", "democrat", "republican", "election", "kamala",
     "war in", "israel", "palestine", "gaza", "ukraine", "russia"
 ]
