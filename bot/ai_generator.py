@@ -26,38 +26,18 @@ SIDE_QUEST_TOPICS = [
 
 FALLBACK_CATALOG = [
     {
-        "id": "sq_research_1",
-        "tweet_1": (
-            "my brain convinced me that before i could study for this exam, "
-            "i needed to reorganize my google drive and learn the history of liechtenstein.\n\n"
-            "cleaning baseboards to avoid opening a pdf is diabolical behavior.\n\n"
-            "stop faking productivity. write the first terrible paragraph."
-        ),
-        "tweet_2": (
-            "the sudden urge to deep-clean your room is just anxiety wearing rubber gloves. "
-            "sit down and do 10 minutes of the ugly work."
-        ),
-        "hook": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein.",
-        "quote": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein.",
-        "author": "Field Notes",
-        "category": "RABBIT HOLE",
-        "theme": "The Research Rabbit Hole",
-        "times_posted": 0,
-        "last_posted": None
-    },
-    {
         "id": "sq_cleaning_1",
         "tweet_1": (
-            "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior.\n\n"
-            "the cleaning spray will not solve the uncomfortable draft.\n\n"
-            "put down the sponge. open the tab. hit send."
+            "Just spent 25 minutes scrubbing the baseboards behind my couch to avoid sending one proposal.\n\n"
+            "The baseboards are spotless. The client is still waiting.\n\n"
+            "Put down the sponge. Open the document. Finish the draft."
         ),
         "tweet_2": (
-            "cleaning your apartment won't make the scary task disappear. "
-            "sit down, open the draft, and do the 5-minute task."
+            "The sudden urge to clean your entire apartment is just anxiety wearing rubber gloves. "
+            "Do the scary 5-minute task first."
         ),
-        "hook": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior.",
-        "quote": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior.",
+        "hook": "Just spent 25 minutes scrubbing the baseboards behind my couch to avoid sending one proposal.",
+        "quote": "Just spent 25 minutes scrubbing the baseboards behind my couch to avoid sending one proposal.",
         "author": "Field Notes",
         "category": "FAKE CHORES",
         "theme": "Aesthetic Organization",
@@ -65,37 +45,17 @@ FALLBACK_CATALOG = [
         "last_posted": None
     },
     {
-        "id": "sq_gear_1",
-        "tweet_1": (
-            "spent two hours researching mechanical keyboard switches when i haven't written a line of code in 4 days.\n\n"
-            "my brain will do literally anything to avoid facing an empty text editor.\n\n"
-            "a $200 keyboard won't write the function for you. open the editor."
-        ),
-        "tweet_2": (
-            "tweaking your setup gives you cheap dopamine without shipping anything. "
-            "ship the ugly version first, customize your desk later."
-        ),
-        "hook": "spent two hours researching mechanical keyboard switches when i haven't written a line of code in 4 days.",
-        "quote": "spent two hours researching mechanical keyboard switches when i haven't written a line of code in 4 days.",
-        "author": "Field Notes",
-        "category": "GEAR TRAP",
-        "theme": "The Gear & Setup Trap",
-        "times_posted": 0,
-        "last_posted": None
-    },
-    {
         "id": "sq_spotify_1",
         "tweet_1": (
-            "spent 45 minutes curating the 'perfect deep work focus playlist' for a study session that lasted 11 minutes.\n\n"
-            "you don't need 3 hours of lo-fi rain sounds to write a 2-page essay.\n\n"
-            "close the 30 tabs. put the phone across the room. lock in."
+            "Spent 40 minutes building the \"ultimate focus playlist\" on Spotify for a task that took 8 minutes.\n\n"
+            "You do not need a movie soundtrack to reply to three emails.\n\n"
+            "Pause the playlist. Open your inbox. Get it done."
         ),
         "tweet_2": (
-            "fiddling with your aesthetic is just procrastination in a trench coat. "
-            "you're not waiting for inspiration, you're avoiding friction."
+            "Waiting for the perfect mood or environment is the easiest way to lose an entire afternoon. Just start ugly."
         ),
-        "hook": "spent 45 minutes curating the perfect deep work focus playlist for a study session that lasted 11 minutes.",
-        "quote": "spent 45 minutes curating the perfect deep work focus playlist for a study session that lasted 11 minutes.",
+        "hook": "Spent 40 minutes building the ultimate focus playlist on Spotify for a task that took 8 minutes.",
+        "quote": "Spent 40 minutes building the ultimate focus playlist on Spotify for a task that took 8 minutes.",
         "author": "Field Notes",
         "category": "SPOTIFY TRAP",
         "theme": "Aesthetic Organization",
@@ -103,18 +63,35 @@ FALLBACK_CATALOG = [
         "last_posted": None
     },
     {
-        "id": "sq_notion_1",
+        "id": "sq_gear_1",
         "tweet_1": (
-            "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.\n\n"
-            "color-coding your calendar will not execute your monday for you.\n\n"
-            "close the dashboard. pick one hard task for tomorrow. lock in."
+            "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow.\n\n"
+            "A quieter spacebar will not write your financial summary.\n\n"
+            "Use the laptop keyboard you already have. Open the file. Get the first draft done."
         ),
         "tweet_2": (
-            "over-planning is the illusion of control. "
-            "the best plan is useless if you don't build the stomach for daily friction."
+            "Researching gear gives you the feeling of progress without any of the work. Build with what you have."
         ),
-        "hook": "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.",
-        "quote": "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.",
+        "hook": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow.",
+        "quote": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow.",
+        "author": "Field Notes",
+        "category": "GEAR TRAP",
+        "theme": "The Gear & Setup Trap",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_notion_1",
+        "tweet_1": (
+            "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today.\n\n"
+            "An aesthetic calendar does not do the work for you.\n\n"
+            "Close the planner. Pick the single hardest task on your list. Start it now."
+        ),
+        "tweet_2": (
+            "Over-planning is just comfortable hiding. The only plan that matters is what you execute in the next 30 minutes."
+        ),
+        "hook": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today.",
+        "quote": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today.",
         "author": "Field Notes",
         "category": "PLANNING TRAP",
         "theme": "The Sunday Planning Delusion",
@@ -122,33 +99,35 @@ FALLBACK_CATALOG = [
         "last_posted": None
     },
     {
-        "id": "sq_tutorial_1",
+        "id": "sq_research_1",
         "tweet_1": (
-            "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.\n\n"
-            "watching other people build things is not building.\n\n"
-            "close youtube. write the first embarrassing post. ship it."
+            "Went to Google to look up one statistic, and somehow ended up reading the entire Wikipedia page on medieval siege weapons.\n\n"
+            "The trebuchet is fascinating. Your deadline is in two hours.\n\n"
+            "Close the 12 tabs. Open the document. Write the first paragraph."
         ),
         "tweet_2": (
-            "passive consumption feels like work, but it's just comfortable hiding. do the ugly friction."
+            "Curiosity rabbit holes are just anxiety in an academic costume. Close the browser and do the real work."
         ),
-        "hook": "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.",
-        "quote": "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.",
+        "hook": "Went to Google to look up one statistic, and somehow ended up reading the entire Wikipedia page on medieval siege weapons.",
+        "quote": "Went to Google to look up one statistic, and somehow ended up reading the entire Wikipedia page on medieval siege weapons.",
         "author": "Field Notes",
-        "category": "TUTORIAL LOOP",
-        "theme": "The Infinite Tutorial Loop",
+        "category": "RABBIT HOLE",
+        "theme": "The Research Rabbit Hole",
         "times_posted": 0,
         "last_posted": None
     },
     {
         "id": "sq_errand_1",
         "tweet_1": (
-            "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.\n\nthe fake plant is hydrated. the deadline did not move.\n\nsit down. open the document. knock out the first form."
+            "Convinced myself I couldn't start my taxes until I sharpened every pencil in the house and organized my sock drawer.\n\n"
+            "The sock drawer is beautiful. The deadline didn't move.\n\n"
+            "Sit down. Open the form. Finish page one."
         ),
         "tweet_2": (
-            "urgent trivial tasks always show up when important scary tasks are due. ignore the sudden chores."
+            "Urgent trivial errands always show up when important work is on the line. Ignore the sudden urge to clean."
         ),
-        "hook": "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.",
-        "quote": "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.",
+        "hook": "Convinced myself I couldn't start my taxes until I sharpened every pencil in the house and organized my sock drawer.",
+        "quote": "Convinced myself I couldn't start my taxes until I sharpened every pencil in the house and organized my sock drawer.",
         "author": "Field Notes",
         "category": "FAKE CHORES",
         "theme": "The Fake Urgent Errand",
@@ -156,15 +135,35 @@ FALLBACK_CATALOG = [
         "last_posted": None
     },
     {
-        "id": "sq_refactor_1",
+        "id": "sq_tutorial_1",
         "tweet_1": (
-            "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.\n\nthe border-radius will not charge credit cards.\n\nleave the css alone. test the scary flow. ship the mvp."
+            "Watched two hours of YouTube tutorials on 'how to write clearly' before writing a single sentence.\n\n"
+            "Watching other people work does not produce your work.\n\n"
+            "Close YouTube. Write the first messy paragraph. You can edit it later."
         ),
         "tweet_2": (
-            "perfectionism is just cowardice with high standards. ship the broken thing and fix it live."
+            "Passive consumption feels like productivity, but it's just comfortable procrastination. Jump into the friction."
         ),
-        "hook": "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.",
-        "quote": "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.",
+        "hook": "Watched two hours of YouTube tutorials on 'how to write clearly' before writing a single sentence.",
+        "quote": "Watched two hours of YouTube tutorials on 'how to write clearly' before writing a single sentence.",
+        "author": "Field Notes",
+        "category": "TUTORIAL LOOP",
+        "theme": "The Infinite Tutorial Loop",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_refactor_1",
+        "tweet_1": (
+            "Spent 2 hours tweaking the button shadows on my app's landing page instead of testing the checkout flow.\n\n"
+            "Subtle drop-shadows will not process payments.\n\n"
+            "Leave the CSS alone. Test the checkout. Ship the product."
+        ),
+        "tweet_2": (
+            "Perfectionism is usually just fear of putting your work out there. Ship the imperfect version first."
+        ),
+        "hook": "Spent 2 hours tweaking the button shadows on my app's landing page instead of testing the checkout flow.",
+        "quote": "Spent 2 hours tweaking the button shadows on my app's landing page instead of testing the checkout flow.",
         "author": "Field Notes",
         "category": "PERFECTION TRAP",
         "theme": "The Fake Perfection Trap",
@@ -174,13 +173,15 @@ FALLBACK_CATALOG = [
     {
         "id": "sq_reading_1",
         "tweet_1": (
-            "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.\n\nbuying the book does not download the knowledge into your skull.\n\nput down the card. open chapter one. read 10 pages."
+            "Bought 3 new books on focus and discipline while 5 unread books are already sitting on my desk.\n\n"
+            "Buying the book does not download the discipline into your brain.\n\n"
+            "Close Amazon. Pick up the book on your desk. Read 10 pages right now."
         ),
         "tweet_2": (
-            "collecting solutions is not solving problems. start with the friction right in front of you."
+            "Buying tools gives you a cheap hit of progress without any effort. Use what you already own."
         ),
-        "hook": "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.",
-        "quote": "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.",
+        "hook": "Bought 3 new books on focus and discipline while 5 unread books are already sitting on my desk.",
+        "quote": "Bought 3 new books on focus and discipline while 5 unread books are already sitting on my desk.",
         "author": "Field Notes",
         "category": "RESEARCH TRAP",
         "theme": "The Research Rabbit Hole",
@@ -190,13 +191,15 @@ FALLBACK_CATALOG = [
     {
         "id": "sq_tab_1",
         "tweet_1": (
-            "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.\n\nthe tab graveyard is not a project manager.\n\nbookmark all tabs into a folder you will never open. close the browser. write 1 page."
+            "Currently have 38 Chrome tabs open as 'reading material' for a project I haven't touched in a week.\n\n"
+            "A crowded tab bar is not a project management system.\n\n"
+            "Bookmark the tabs. Close the browser. Write one page in peace."
         ),
         "tweet_2": (
-            "information hoarding is anxiety in disguise. you don't need more data, you need to execute."
+            "Information overload is often just avoidance in disguise. You don't need more tabs; you need 15 minutes of uninterrupted focus."
         ),
-        "hook": "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.",
-        "quote": "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.",
+        "hook": "Currently have 38 Chrome tabs open as 'reading material' for a project I haven't touched in a week.",
+        "quote": "Currently have 38 Chrome tabs open as 'reading material' for a project I haven't touched in a week.",
         "author": "Field Notes",
         "category": "DOPAMINE LOOP",
         "theme": "The Dopamine Loop",
@@ -223,7 +226,7 @@ def format_tweet_2(entry: Dict[str, Any]) -> str:
 
 
 def validate_character_limits(entry: Dict[str, Any]) -> bool:
-    """Ensure both tweets meet character limits AND contain the Formula 2 motivational structure."""
+    """Ensure both tweets meet character limits, have proper punctuation, and sound like real human speech."""
     t1 = format_tweet_1(entry)
     t2 = format_tweet_2(entry)
     len_t1 = len(t1)
@@ -239,12 +242,25 @@ def validate_character_limits(entry: Dict[str, Any]) -> bool:
         print("[Validation Warning] Tweet 1 missing multi-paragraph structure (need setup + reality check + motivation).")
         return False
 
+    # Enforce punctuation: human writing uses periods or question marks, not unpunctuated run-on strings
+    if "." not in t1 and "?" not in t1 and "!" not in t1:
+        print("[Validation Warning] Tweet 1 missing standard punctuation. Rejecting unpunctuated AI run-on.")
+        return False
+
+    # Ban forced slang / AI glitches
+    banned_phrases = ["close the mop", "stop the shine", "wait for your sparkle", "shine on", "lock in for your"]
+    t1_lower = t1.lower()
+    for bp in banned_phrases:
+        if bp in t1_lower:
+            print(f"[Validation Warning] Tweet 1 contains cringe forced slang: '{bp}'. Rejecting.")
+            return False
+
     # Check for motivational call-to-action / punchy kick in the last paragraph
     action_keywords = [
-        "close", "open", "lock in", "put down", "sit down", "write", "send",
-        "finish", "start", "stop", "do the", "pick one", "delete", "step away",
+        "close", "open", "put down", "sit down", "write", "send",
+        "finish", "start", "stop", "do the", "pick", "delete", "step away",
         "clean", "execute", "hit send", "pause", "get back", "turn off", "shut down",
-        "draft", "ship", "toss", "leave", "drop", "face the"
+        "draft", "ship", "toss", "leave", "drop", "face the", "get it done", "knock out"
     ]
     last_para = paras[-1].lower()
     has_action = any(kw in last_para for kw in action_keywords)
@@ -256,7 +272,7 @@ def validate_character_limits(entry: Dict[str, Any]) -> bool:
 
 
 def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3) -> Optional[Dict[str, Any]]:
-    """Call Groq API to generate an authentic Formula 2 tweet (relatable humor + sharp motivational turnaround)."""
+    """Call Groq API to generate a natural, witty, deadpan human tweet (relatable observation + grounded motivation)."""
     if not ai_config.groq_api_key:
         print("[AI Generator] No GROQ_API_KEY set. Falling back to local catalog.")
         return None
@@ -267,59 +283,57 @@ def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3)
     }
 
     system_prompt = (
-        "You are the voice of an elite modern writer who writes viral, hilarious, and genuinely MOTIVATING tweets calling out procrastination.\n"
-        "Formula 2: 'The Absurdly Specific Side Quest' (Call out the avoidance -> reality check -> informal motivation to lock in).\n\n"
-        "EVERY POST (tweet_1) MUST FOLLOW THIS EXACT 3-PARAGRAPH STRUCTURE:\n"
-        "Paragraph 1 (The Absurd Setup): Call out an absurdly specific avoidance rabbit hole (cleaning baseboards, curating 3-hour playlists, Notion dashboards, mechanical keyboards, Wikipedia dives) with self-aware internet humor.\n"
-        "Paragraph 2 (The Reality Check): A witty, brutal reality check showing why the side quest won't save you.\n"
-        "Paragraph 3 (The Informal Motivation): A punchy, sharp, informal kick to snap out of it, stop stalling, and LOCK IN right now (e.g. 'close the tab. open the doc. lock in for 15 minutes.').\n\n"
-        "TWEET 2 (Thread Reply): 1-2 punchy sentences delivering a memorable, grounded truth about doing hard things instead of hiding in fake productivity.\n\n"
-        "STRICT CONSTRAINTS:\n"
-        "- NO BULLET POINTS. NO NUMBERED LISTS (never use '1.', '2.', '•').\n"
-        "- NO QUOTES. NO AUTHOR CITATIONS. NO QUOTATION MARKS.\n"
-        "- MUST INCLUDE MOTIVATION: Do NOT just complain or ramble. Always end paragraph 3 with the kick to close tabs and do the work!\n"
-        "- Relaxed, conversational casing (lowercase or relaxed phone typing).\n"
-        "- Length: \"tweet_1\" MUST be strictly between 160 and 270 characters (3 short paragraphs separated by blank lines).\n"
-        "- Length: \"tweet_2\" MUST be strictly between 60 and 220 characters.\n\n"
-        "GOLD-STANDARD EXAMPLES:\n\n"
-        "Example 1 (Spotify / Music Trap):\n"
+        "You are a witty, observational writer (think Jerry Seinfeld, Tim Urban, or David Sedaris) writing relatable, honest tweets about modern procrastination.\n\n"
+        "CORE VOICE RULES — WRITE LIKE A REAL HUMAN:\n"
+        "- Write naturally in clean, standard English. Use normal sentence structure, capitalization, and punctuation (periods, commas).\n"
+        "- NO FORCED SLANG: Never use cringe internet buzzwords ('sparkle', 'close the mop', 'stop the shine', 'diabolical', 'cooked', 'slay').\n"
+        "- NO RHYMING OR SLAM POETRY: Do NOT string together rhyming lists of commands. Talk like a normal person making a dry, deadpan observation.\n"
+        "- NO NUMBERED LISTS, BULLET POINTS, OR QUOTATION MARKS.\n\n"
+        "STRUCTURE OF TWEET 1 (Must be 3 short, distinct paragraphs):\n"
+        "Paragraph 1 (The Setup): A specific, funny, deadpan description of an avoidance behavior you caught yourself doing (e.g. cleaning, researching gear, tweaking playlists, organizing Notion).\n"
+        "Paragraph 2 (The Reality Check): A short, dry 1-sentence truth showing why it didn't solve anything (e.g. 'The baseboards are clean. The client is still waiting.').\n"
+        "Paragraph 3 (The Motivation): A grounded, practical call to action (e.g. 'Put down the sponge. Open the document. Finish the draft.').\n\n"
+        "TWEET 2 (Thread Reply): 1-2 calm, natural sentences delivering a thoughtful insight on why we avoid uncomfortable work.\n\n"
+        "GOLD-STANDARD HUMAN EXAMPLES:\n\n"
+        "Example 1:\n"
         "{\n"
-        '  "tweet_1": "spent 45 minutes curating a 3-hour synthwave playlist for a task that took 8 minutes.\\n\\nyou do not need movie soundtrack tension to update a spreadsheet.\\n\\npause the queue. open the sheet. finish it before track two.",\n'
-        '  "tweet_2": "you do not need the perfect frequency to do average tasks. put the headphones on, open the tab, and do the ugly work.",\n'
-        '  "category": "SPOTIFY TRAP",\n'
-        '  "hook": "spent 45 minutes curating a 3-hour synthwave playlist for a task that took 8 minutes."\n'
-        "}\n\n"
-        "Example 2 (Cleaning / Chores Trap):\n"
-        "{\n"
-        '  "tweet_1": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior.\\n\\nthe cleaning spray will not solve the uncomfortable draft.\\n\\nput down the sponge. open the tab. hit send.",\n'
-        '  "tweet_2": "cleaning your apartment will not make the scary task disappear. sit down and do 10 minutes of the friction.",\n'
+        '  "tweet_1": "Just spent 25 minutes scrubbing the baseboards behind my couch to avoid sending one proposal.\\n\\nThe baseboards are spotless. The client is still waiting.\\n\\nPut down the sponge. Open the document. Finish the draft.",\n'
+        '  "tweet_2": "The sudden urge to clean your entire apartment is just anxiety wearing rubber gloves. Do the scary 5-minute task first.",\n'
         '  "category": "FAKE CHORES",\n'
-        '  "hook": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior."\n'
+        '  "hook": "Just spent 25 minutes scrubbing the baseboards behind my couch to avoid sending one proposal."\n'
         "}\n\n"
-        "Example 3 (Research / Wikipedia Dive):\n"
+        "Example 2:\n"
         "{\n"
-        '  "tweet_1": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein.\\n\\nwikipedia dives are just anxiety wearing an academic costume.\\n\\nclose the 14 tabs. write the first terrible paragraph.",\n'
-        '  "tweet_2": "stop waiting to feel ready. you do not need inspiration, you just need 15 minutes of uninterrupted focus.",\n'
-        '  "category": "RABBIT HOLE",\n'
-        '  "hook": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein."\n'
+        '  "tweet_1": "Spent 40 minutes building the \\"ultimate focus playlist\\" on Spotify for a task that took 8 minutes.\\n\\nYou do not need a movie soundtrack to reply to three emails.\\n\\nPause the playlist. Open your inbox. Get it done.",\n'
+        '  "tweet_2": "Waiting for the perfect mood or environment is the easiest way to lose an entire afternoon. Just start ugly.",\n'
+        '  "category": "SPOTIFY TRAP",\n'
+        '  "hook": "Spent 40 minutes building the ultimate focus playlist on Spotify for a task that took 8 minutes."\n'
         "}\n\n"
-        "Example 4 (Gear & Setup Trap):\n"
+        "Example 3:\n"
         "{\n"
-        '  "tweet_1": "spent two hours researching mechanical keyboard switches when i have not written a line of code in 4 days.\\n\\na $200 keyboard will not write the function for you.\\n\\nuse your ugly laptop keyboard. open the editor. lock in.",\n'
-        '  "tweet_2": "tweaking your setup gives you cheap dopamine without shipping anything. make the first version look like garbage.",\n'
+        '  "tweet_1": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow.\\n\\nA quieter spacebar will not write your financial summary.\\n\\nUse the laptop keyboard you already have. Open the file. Get the first draft done.",\n'
+        '  "tweet_2": "Researching gear gives you the feeling of progress without any of the work. Build with what you have.",\n'
         '  "category": "GEAR TRAP",\n'
-        '  "hook": "spent two hours researching mechanical keyboard switches when i have not written a line of code in 4 days."\n'
+        '  "hook": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow."\n'
         "}\n\n"
+        "Example 4:\n"
+        "{\n"
+        '  "tweet_1": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today.\\n\\nAn aesthetic calendar does not do the work for you.\\n\\nClose the planner. Pick the single hardest task on your list. Start it now.",\n'
+        '  "tweet_2": "Over-planning is just comfortable hiding. The only plan that matters is what you execute in the next 30 minutes.",\n'
+        '  "category": "PLANNING TRAP",\n'
+        '  "hook": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today."\n'
+        "}\n\n"
+        "Length limits: \"tweet_1\" strictly under 270 chars (3 paragraphs). \"tweet_2\" strictly under 240 chars.\n"
         "Return a JSON object with keys: \"tweet_1\", \"tweet_2\", \"category\", \"hook\", \"quote\" (duplicate of hook), \"author\" ('Field Notes')."
     )
 
     user_prompt = (
-        f"Write a hilarious, relatable, and MOTIVATIONAL Formula 2 Side Quest tweet pair for topic: '{theme_name}' ({theme_desc}).\n\n"
-        f"STRUCTURE REQUIRED:\n"
-        f"Paragraph 1: The funny, absurd avoidance side quest call-out.\n"
-        f"Paragraph 2: The brutal, witty reality check.\n"
-        f"Paragraph 3: The punchy, informal motivational kick to snap out of it and do the work right now (e.g. 'close the tab. open the doc. lock in.').\n\n"
-        f"tweet_2: The follow-up thread reply with a memorable, dry truth about discipline and friction.\n"
+        f"Write an authentic, deadpan, and naturally MOTIVATING tweet pair about: '{theme_name}' ({theme_desc}).\n\n"
+        f"Remember: Write like a real person, NOT an AI trying to sound cool. Use proper punctuation (periods and commas).\n"
+        f"Paragraph 1: The absurd avoidance behavior.\n"
+        f"Paragraph 2: The deadpan reality check.\n"
+        f"Paragraph 3: The grounded call to action (e.g. 'Put down the sponge. Open the document. Finish the draft.').\n\n"
+        f"tweet_2: A thoughtful, conversational observation with normal punctuation.\n"
         f"Strictly under 270 chars for tweet_1 and under 240 chars for tweet_2. Respond ONLY in valid JSON."
     )
 
