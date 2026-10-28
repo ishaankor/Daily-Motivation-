@@ -107,17 +107,99 @@ FALLBACK_CATALOG = [
         "tweet_1": (
             "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.\n\n"
             "color-coding your calendar will not execute your monday for you.\n\n"
-            "close the dashboard. pick one hard task for tomorrow. go to sleep on time."
+            "close the dashboard. pick one hard task for tomorrow. lock in."
         ),
         "tweet_2": (
             "over-planning is the illusion of control. "
-            "the best plan in the world is useless if you don't build the stomach for daily friction."
+            "the best plan is useless if you don't build the stomach for daily friction."
         ),
         "hook": "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.",
         "quote": "spent 4 hours designing an aesthetic notion dashboard for next week instead of doing anything today.",
         "author": "Field Notes",
         "category": "PLANNING TRAP",
         "theme": "The Sunday Planning Delusion",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_tutorial_1",
+        "tweet_1": (
+            "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.\n\n"
+            "watching other people build things is not building.\n\n"
+            "close youtube. write the first embarrassing post. ship it."
+        ),
+        "tweet_2": (
+            "passive consumption feels like work, but it's just comfortable hiding. do the ugly friction."
+        ),
+        "hook": "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.",
+        "quote": "watched 3 hours of youtube tutorials on 'how to build an audience' before writing a single sentence.",
+        "author": "Field Notes",
+        "category": "TUTORIAL LOOP",
+        "theme": "The Infinite Tutorial Loop",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_errand_1",
+        "tweet_1": (
+            "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.\n\nthe fake plant is hydrated. the deadline did not move.\n\nsit down. open the document. knock out the first form."
+        ),
+        "tweet_2": (
+            "urgent trivial tasks always show up when important scary tasks are due. ignore the sudden chores."
+        ),
+        "hook": "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.",
+        "quote": "convinced myself i couldn't start my taxes until i sharpened all the pencils and watered a fake plant.",
+        "author": "Field Notes",
+        "category": "FAKE CHORES",
+        "theme": "The Fake Urgent Errand",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_refactor_1",
+        "tweet_1": (
+            "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.\n\nthe border-radius will not charge credit cards.\n\nleave the css alone. test the scary flow. ship the mvp."
+        ),
+        "tweet_2": (
+            "perfectionism is just cowardice with high standards. ship the broken thing and fix it live."
+        ),
+        "hook": "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.",
+        "quote": "spent 3 hours tweaking button padding and css shadows to avoid testing the payment checkout flow.",
+        "author": "Field Notes",
+        "category": "PERFECTION TRAP",
+        "theme": "The Fake Perfection Trap",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_reading_1",
+        "tweet_1": (
+            "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.\n\nbuying the book does not download the knowledge into your skull.\n\nput down the card. open chapter one. read 10 pages."
+        ),
+        "tweet_2": (
+            "collecting solutions is not solving problems. start with the friction right in front of you."
+        ),
+        "hook": "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.",
+        "quote": "bought 4 productivity books on amazon to feel productive instead of reading the 6 sitting on my nightstand.",
+        "author": "Field Notes",
+        "category": "RESEARCH TRAP",
+        "theme": "The Research Rabbit Hole",
+        "times_posted": 0,
+        "last_posted": None
+    },
+    {
+        "id": "sq_tab_1",
+        "tweet_1": (
+            "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.\n\nthe tab graveyard is not a project manager.\n\nbookmark all tabs into a folder you will never open. close the browser. write 1 page."
+        ),
+        "tweet_2": (
+            "information hoarding is anxiety in disguise. you don't need more data, you need to execute."
+        ),
+        "hook": "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.",
+        "quote": "currently have 47 chrome tabs open as 'research' for a project i have not touched in 3 weeks.",
+        "author": "Field Notes",
+        "category": "DOPAMINE LOOP",
+        "theme": "The Dopamine Loop",
         "times_posted": 0,
         "last_posted": None
     }
@@ -141,20 +223,40 @@ def format_tweet_2(entry: Dict[str, Any]) -> str:
 
 
 def validate_character_limits(entry: Dict[str, Any]) -> bool:
-    """Ensure both tweets strictly fit within Twitter's 280-character limit."""
+    """Ensure both tweets meet character limits AND contain the Formula 2 motivational structure."""
     t1 = format_tweet_1(entry)
     t2 = format_tweet_2(entry)
     len_t1 = len(t1)
     len_t2 = len(t2)
 
-    valid = (0 < len_t1 <= 280) and (0 < len_t2 <= 280)
-    if not valid:
-        print(f"[Validation Warning] Tweet 1: {len_t1}/280 chars, Tweet 2: {len_t2}/280 chars")
-    return valid
+    if not (0 < len_t1 <= 275 and 0 < len_t2 <= 250):
+        print(f"[Validation Warning] Length invalid: Tweet 1 ({len_t1}/275), Tweet 2 ({len_t2}/250)")
+        return False
+
+    # Check for paragraph structure (must have blank lines separating setup, reality check, and motivation)
+    paras = [p.strip() for p in t1.split("\n\n") if p.strip()]
+    if len(paras) < 2:
+        print("[Validation Warning] Tweet 1 missing multi-paragraph structure (need setup + reality check + motivation).")
+        return False
+
+    # Check for motivational call-to-action / punchy kick in the last paragraph
+    action_keywords = [
+        "close", "open", "lock in", "put down", "sit down", "write", "send",
+        "finish", "start", "stop", "do the", "pick one", "delete", "step away",
+        "clean", "execute", "hit send", "pause", "get back", "turn off", "shut down",
+        "draft", "ship", "toss", "leave", "drop", "face the"
+    ]
+    last_para = paras[-1].lower()
+    has_action = any(kw in last_para for kw in action_keywords)
+    if not has_action:
+        print(f"[Validation Warning] Final paragraph lacks motivational action kick: '{paras[-1]}'")
+        return False
+
+    return True
 
 
 def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3) -> Optional[Dict[str, Any]]:
-    """Call Groq API to generate a pure Formula 2 narrative tweet (conversational, funny, NO bullets)."""
+    """Call Groq API to generate an authentic Formula 2 tweet (relatable humor + sharp motivational turnaround)."""
     if not ai_config.groq_api_key:
         print("[AI Generator] No GROQ_API_KEY set. Falling back to local catalog.")
         return None
@@ -165,29 +267,60 @@ def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3)
     }
 
     system_prompt = (
-        "You write hilarious, self-aware, brutally relatable tweets about modern procrastination.\n"
-        "Style: Formula 2 — 'The Absurdly Specific Side Quest'.\n\n"
-        "CRITICAL RULES:\n"
-        "- NO BULLET POINTS. NO NUMBERED LISTS (no '1. 2. 3.', no '•').\n"
-        "- NO QUOTES. NEVER CITE AUTHORS. NO QUOTATION MARKS.\n"
-        "- Pure, natural conversational flow. 2 to 3 short paragraphs separated by blank lines.\n"
-        "- Relaxed human lowercase or natural casing (like someone typing on their phone at 2 PM).\n"
-        "- Witty, self-deprecating, calling out absurd mental gymnastics (cleaning baseboards, Spotify playlists, mechanical keyboards).\n"
-        "- Total length of \"tweet_1\" MUST BE strictly under 275 characters!\n"
-        "- Total length of \"tweet_2\" MUST BE strictly under 250 characters!\n\n"
-        "Return a JSON object with these EXACT keys:\n"
-        "- \"tweet_1\": The main tweet text (2-3 short conversational paragraphs, max 270 chars)\n"
-        "- \"tweet_2\": The punchline follow-up thread reply (1-2 sentences, max 240 chars)\n"
-        "- \"category\": 2-word uppercase theme (e.g. 'SIDE QUEST', 'FAKE CHORES', 'RABBIT HOLE')\n"
-        "- \"hook\": The first paragraph of tweet_1\n"
-        "- \"quote\": Duplicate of hook\n"
-        "- \"author\": 'Field Notes'"
+        "You are the voice of an elite modern writer who writes viral, hilarious, and genuinely MOTIVATING tweets calling out procrastination.\n"
+        "Formula 2: 'The Absurdly Specific Side Quest' (Call out the avoidance -> reality check -> informal motivation to lock in).\n\n"
+        "EVERY POST (tweet_1) MUST FOLLOW THIS EXACT 3-PARAGRAPH STRUCTURE:\n"
+        "Paragraph 1 (The Absurd Setup): Call out an absurdly specific avoidance rabbit hole (cleaning baseboards, curating 3-hour playlists, Notion dashboards, mechanical keyboards, Wikipedia dives) with self-aware internet humor.\n"
+        "Paragraph 2 (The Reality Check): A witty, brutal reality check showing why the side quest won't save you.\n"
+        "Paragraph 3 (The Informal Motivation): A punchy, sharp, informal kick to snap out of it, stop stalling, and LOCK IN right now (e.g. 'close the tab. open the doc. lock in for 15 minutes.').\n\n"
+        "TWEET 2 (Thread Reply): 1-2 punchy sentences delivering a memorable, grounded truth about doing hard things instead of hiding in fake productivity.\n\n"
+        "STRICT CONSTRAINTS:\n"
+        "- NO BULLET POINTS. NO NUMBERED LISTS (never use '1.', '2.', '•').\n"
+        "- NO QUOTES. NO AUTHOR CITATIONS. NO QUOTATION MARKS.\n"
+        "- MUST INCLUDE MOTIVATION: Do NOT just complain or ramble. Always end paragraph 3 with the kick to close tabs and do the work!\n"
+        "- Relaxed, conversational casing (lowercase or relaxed phone typing).\n"
+        "- Length: \"tweet_1\" MUST be strictly between 160 and 270 characters (3 short paragraphs separated by blank lines).\n"
+        "- Length: \"tweet_2\" MUST be strictly between 60 and 220 characters.\n\n"
+        "GOLD-STANDARD EXAMPLES:\n\n"
+        "Example 1 (Spotify / Music Trap):\n"
+        "{\n"
+        '  "tweet_1": "spent 45 minutes curating a 3-hour synthwave playlist for a task that took 8 minutes.\\n\\nyou do not need movie soundtrack tension to update a spreadsheet.\\n\\npause the queue. open the sheet. finish it before track two.",\n'
+        '  "tweet_2": "you do not need the perfect frequency to do average tasks. put the headphones on, open the tab, and do the ugly work.",\n'
+        '  "category": "SPOTIFY TRAP",\n'
+        '  "hook": "spent 45 minutes curating a 3-hour synthwave playlist for a task that took 8 minutes."\n'
+        "}\n\n"
+        "Example 2 (Cleaning / Chores Trap):\n"
+        "{\n"
+        '  "tweet_1": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior.\\n\\nthe cleaning spray will not solve the uncomfortable draft.\\n\\nput down the sponge. open the tab. hit send.",\n'
+        '  "tweet_2": "cleaning your apartment will not make the scary task disappear. sit down and do 10 minutes of the friction.",\n'
+        '  "category": "FAKE CHORES",\n'
+        '  "hook": "cleaning the baseboards behind your couch with an alcohol wipe to avoid sending one email is diabolical behavior."\n'
+        "}\n\n"
+        "Example 3 (Research / Wikipedia Dive):\n"
+        "{\n"
+        '  "tweet_1": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein.\\n\\nwikipedia dives are just anxiety wearing an academic costume.\\n\\nclose the 14 tabs. write the first terrible paragraph.",\n'
+        '  "tweet_2": "stop waiting to feel ready. you do not need inspiration, you just need 15 minutes of uninterrupted focus.",\n'
+        '  "category": "RABBIT HOLE",\n'
+        '  "hook": "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein."\n'
+        "}\n\n"
+        "Example 4 (Gear & Setup Trap):\n"
+        "{\n"
+        '  "tweet_1": "spent two hours researching mechanical keyboard switches when i have not written a line of code in 4 days.\\n\\na $200 keyboard will not write the function for you.\\n\\nuse your ugly laptop keyboard. open the editor. lock in.",\n'
+        '  "tweet_2": "tweaking your setup gives you cheap dopamine without shipping anything. make the first version look like garbage.",\n'
+        '  "category": "GEAR TRAP",\n'
+        '  "hook": "spent two hours researching mechanical keyboard switches when i have not written a line of code in 4 days."\n'
+        "}\n\n"
+        "Return a JSON object with keys: \"tweet_1\", \"tweet_2\", \"category\", \"hook\", \"quote\" (duplicate of hook), \"author\" ('Field Notes')."
     )
 
     user_prompt = (
-        f"Generate a Formula 2 Side Quest tweet pair for topic: '{theme_name}' ({theme_desc}). "
-        f"Remember: NO BULLET POINTS. NO QUOTES. Natural, funny, conversational paragraphs. "
-        f"Respond ONLY in valid JSON."
+        f"Write a hilarious, relatable, and MOTIVATIONAL Formula 2 Side Quest tweet pair for topic: '{theme_name}' ({theme_desc}).\n\n"
+        f"STRUCTURE REQUIRED:\n"
+        f"Paragraph 1: The funny, absurd avoidance side quest call-out.\n"
+        f"Paragraph 2: The brutal, witty reality check.\n"
+        f"Paragraph 3: The punchy, informal motivational kick to snap out of it and do the work right now (e.g. 'close the tab. open the doc. lock in.').\n\n"
+        f"tweet_2: The follow-up thread reply with a memorable, dry truth about discipline and friction.\n"
+        f"Strictly under 270 chars for tweet_1 and under 240 chars for tweet_2. Respond ONLY in valid JSON."
     )
 
     primary = ai_config.groq_model
@@ -232,7 +365,7 @@ def generate_quote_with_groq(theme_name: str, theme_desc: str, retries: int = 3)
                     if validate_character_limits(parsed):
                         return parsed
                     else:
-                        print(f"[AI Generator] Generation exceeded 280 chars on model {model}, retrying (attempt {attempt+1}/{retries})...")
+                        print(f"[AI Generator] Generation failed validation on model {model}, retrying (attempt {attempt+1}/{retries})...")
                 elif response.status_code == 400 and "json_validate_failed" in response.text:
                     print(f"[AI Generator] Model '{model}' failed JSON schema validation; switching models immediately.")
                     break
