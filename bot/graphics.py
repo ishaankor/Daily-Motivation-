@@ -124,9 +124,9 @@ def render_apple_notes_card(
     paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
     if not paragraphs:
         paragraphs = [
-            "my brain convinced me that before i could study for this exam, i needed to reorganize my google drive and learn the history of liechtenstein.",
-            "cleaning baseboards to avoid opening a pdf is diabolical behavior.",
-            "stop faking productivity. write the first terrible paragraph."
+            "Just spent 35 minutes completely reorganizing my spice rack alphabetically to avoid writing one proposal.",
+            "The paprika is organized. The client is still waiting.",
+            "Step away from the seasonings. Open the document. Finish the draft."
         ]
 
     # 6. Render Paragraphs with natural line height and spacing
