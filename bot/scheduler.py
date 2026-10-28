@@ -1,7 +1,7 @@
 """Automated Cron Scheduler for Daily Motivation Bot.
 
 Runs automatically at a designated time every day (default: 09:00 AM local time).
-Handles weekday themed mindset posts and Sunday Reset threads seamlessly.
+Handles daily Formula 2 side quest posts seamlessly.
 """
 
 import argparse
@@ -12,23 +12,26 @@ import time
 import schedule
 
 from bot.config import paths, twitter_config
+import random
 from main import run_daily_workflow
 
 DEFAULT_POST_TIME = os.getenv("SCHEDULE_TIME", "09:00")
 
 
 def scheduled_job():
-    """Execute today's scheduled posting workflow."""
+    """Execute today's scheduled posting workflow with organic timing jitter."""
     now = datetime.datetime.now()
-    weekday_idx = now.weekday()
     day_name = now.strftime("%A")
-    
+
+    # Organic human timing jitter (random delay 1 to 18 minutes) to mask robotic clock regularity
+    jitter_sec = random.randint(60, 1080)
+    print(f"\n⏰ CRON TRIGGER RECEIVED: {day_name}, {now.strftime('%I:%M %p')}")
+    print(f"🎲 Applying organic human timing jitter ({jitter_sec // 60}m {jitter_sec % 60}s delay)...")
+    time.sleep(jitter_sec)
+
+    now = datetime.datetime.now()
     print("\n" + "=" * 60)
-    print(f"⏰ CRON TRIGGER FIRED: {day_name}, {now.strftime('%B %d, %Y %I:%M %p')}")
-    if weekday_idx == 6:
-        print("🌅 TODAY IS SUNDAY: Launching Sunday Reset Workflow...")
-    else:
-        print(f"🚀 Launching Daily Workflow for {day_name}...")
+    print(f"🚀 Launching Daily Workflow at {now.strftime('%I:%M %p')} for {day_name}...")
     print("=" * 60)
 
     try:

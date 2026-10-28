@@ -17,8 +17,8 @@ import os
 import sys
 
 from bot.config import paths, twitter_config, ai_config
-from bot.ai_generator import QuotesCatalog, DAY_THEMES
-from bot.graphics import render_card_for_today, render_cosmic_card, render_obsidian_card, WEEKDAY_STYLES
+from bot.ai_generator import QuotesCatalog, SIDE_QUEST_TOPICS
+from bot.graphics import render_card_for_today, render_apple_notes_card
 from bot.database import db_manager
 from bot.twitter_client import twitter_client
 
@@ -73,32 +73,28 @@ def run_test_auth():
     print("=" * 60)
 
 
-def run_daily_workflow(dry_run: bool = False, weekday_override: int = None):
-    """Execute the full workflow for today's post (or specified weekday)."""
+def run_daily_workflow(dry_run: bool = False):
+    """Execute the daily workflow using the dynamic side quest pool (no rigid day themes)."""
     now = datetime.datetime.now()
-    weekday_idx = weekday_override if weekday_override is not None else now.weekday()
-    theme_name, theme_desc = DAY_THEMES.get(weekday_idx, ("Daily Wisdom", "Inspiration"))
-    style_name = WEEKDAY_STYLES.get(weekday_idx, "obsidian")
-
-    day_label = "Sunday (Reset Mode)" if weekday_idx == 6 else now.strftime('%A, %B %d, %Y')
+    day_label = now.strftime('%A, %B %d, %Y')
     print("=" * 60)
-    print(f"  DAILY MOTIVATION BOT — {day_label}")
-    print(f"  Theme: {theme_name} | Visual Style: {style_name.upper()}")
+    print(f"  THE PROCRASTINATION ARCHIVE — {day_label}")
+    print(f"  Format: Formula 2 Side Quest | Card: Apple Notes")
     print("=" * 60)
 
-    # 1. Fetch or generate today's quote entry
+    # 1. Fetch or generate a fresh side quest entry from dynamic pool
     catalog = QuotesCatalog()
-    print("\n[Step 1] Sourcing quote entry for today...")
-    entry = catalog.get_entry_for_today(weekday_idx)
-    print(f"  Quote: \"{entry['quote']}\"")
-    print(f"  Author: {entry['author']}")
-    print(f"  Category: {entry.get('category', 'WISDOM')}")
+    print("\n[Step 1] Sourcing side quest entry...")
+    entry = catalog.get_entry_for_today()
+    hero_text = entry.get('tweet_1', '').split('\n\n')[0]
+    print(f"  Side Quest: \"{hero_text}\"")
+    print(f"  Category: {entry.get('category', 'SIDE QUEST')}")
 
-    # 2. Render Quote Card Graphic
-    print("\n[Step 2] Rendering visual quote card...")
-    output_filename = f"card_{now.strftime('%Y%m%d')}_{style_name}.png"
+    # 2. Render Apple Notes Card Graphic
+    print("\n[Step 2] Rendering Apple Notes card...")
+    output_filename = f"card_{now.strftime('%Y%m%d')}_apple_notes.png"
     output_path = os.path.join(paths.output_dir, output_filename)
-    card_path = render_card_for_today(entry, weekday_idx, output_path=output_path)
+    card_path = render_card_for_today(entry, output_path=output_path)
     print(f"  Card generated at: {card_path}")
 
     # 3. Post (or simulate) the 2-tweet thread
@@ -116,7 +112,7 @@ def run_daily_workflow(dry_run: bool = False, weekday_override: int = None):
             tweet_id=tweet_1_id,
             reply_tweet_id=tweet_2_id,
             entry=entry,
-            style_used=style_name
+            style_used="apple_notes"
         )
 
         if not dry_run:
@@ -133,21 +129,15 @@ def run_daily_workflow(dry_run: bool = False, weekday_override: int = None):
     print("=" * 60)
 
 
-def preview_card_sample(style: str):
-    """Generate a sample card image for manual review."""
-    sample = {
-        "quote": "We suffer more often in imagination than in reality. True mastery is learning to quiet the storms you invent in your own mind.",
-        "author": "Seneca",
-        "category": "STOIC WISDOM"
-    }
+def preview_card_sample(style: str = "apple_notes"):
+    """Generate a sample Apple Notes card image for manual review."""
+    from bot.ai_generator import FALLBACK_CATALOG
+    sample = FALLBACK_CATALOG[0]
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    if style.lower() == "obsidian":
-        out = os.path.join(paths.output_dir, f"sample_obsidian_{timestamp}.png")
-        path = render_obsidian_card(sample, out)
-    else:
-        out = os.path.join(paths.output_dir, f"sample_cosmic_{timestamp}.png")
-        path = render_cosmic_card(sample, out)
+    out = os.path.join(paths.output_dir, f"sample_apple_notes_{timestamp}.png")
+    path = render_apple_notes_card(sample, out)
     print(f"Preview card generated: {path}")
+    return path
 
 
 def view_history():
@@ -168,22 +158,27 @@ def view_history():
 
 
 def test_ai_generator(theme: str = None):
-    """Test Groq AI quote generation live and display character count verification."""
-    from bot.ai_generator import generate_quote_with_groq, format_tweet_1, format_tweet_2
+    """Test Groq AI side quest generation live and display character count verification."""
+    from bot.ai_generator import generate_quote_with_groq, format_tweet_1, format_tweet_2, SIDE_QUEST_TOPICS
     import json
+    import random
 
-    theme_name = theme if theme else "Focus Friday"
-    theme_desc = "Deep Work, Craftsmanship, and Execution"
+    if theme:
+        topic_name = "Side Quest"
+        topic_desc = theme
+    else:
+        topic_desc = random.choice(SIDE_QUEST_TOPICS)
+        topic_name = "Side Quest"
 
     print("=" * 60)
     print(f"       TESTING GROQ AI GENERATOR")
-    print(f"       Theme: {theme_name}")
+    print(f"       Topic: {topic_desc}")
     print("=" * 60)
-    print("Calling Groq API (openai/gpt-oss-20b)...")
+    print("Calling Groq API (openai/gpt-oss-120b)...")
 
-    entry = generate_quote_with_groq(theme_name, theme_desc)
+    entry = generate_quote_with_groq(topic_name, topic_desc)
     if not entry:
-        print("\n❌ Failed to generate quote from Groq. Check your GROQ_API_KEY in .env.")
+        print("\n❌ Failed to generate side quest from Groq. Check your GROQ_API_KEY in .env.")
         return
 
     print("\n✅ Groq Response Received Successfully!\n")
@@ -288,9 +283,9 @@ def main():
     elif args.post_today:
         run_daily_workflow(dry_run=False)
     elif args.sunday_reset:
-        run_daily_workflow(dry_run=True, weekday_override=6)
+        run_daily_workflow(dry_run=True)
     elif args.post_sunday:
-        run_daily_workflow(dry_run=False, weekday_override=6)
+        run_daily_workflow(dry_run=False)
     elif args.schedule:
         from bot.scheduler import start_scheduler
         start_scheduler(post_time=args.time)

@@ -10,8 +10,8 @@ import sys
 from flask import Flask, jsonify, request, send_file
 
 from bot.config import paths, twitter_config, db_config
-from bot.ai_generator import QuotesCatalog, DAY_THEMES
-from bot.graphics import render_card_for_today, WEEKDAY_STYLES
+from bot.ai_generator import QuotesCatalog
+from bot.graphics import render_card_for_today, render_apple_notes_card
 from bot.database import db_manager
 from bot.twitter_client import twitter_client
 from main import run_daily_workflow
@@ -36,19 +36,14 @@ def health():
     if request.method == "HEAD":
         return "", 200
     now = datetime.datetime.now()
-    weekday_idx = now.weekday()
-    theme_name, _ = DAY_THEMES.get(weekday_idx, ("Daily Wisdom", ""))
-    style_name = WEEKDAY_STYLES.get(weekday_idx, "cosmic")
 
     return jsonify({
         "status": "online",
         "bot": twitter_config.handle,
         "engine": "twikit (100% Free)",
-        "today": {
-            "day": now.strftime("%A, %B %d, %Y"),
-            "theme": theme_name,
-            "style": style_name
-        },
+        "format": "Formula 2 (Absurd Side Quests)",
+        "card_style": "Apple Notes",
+        "today": now.strftime("%A, %B %d, %Y"),
         "server_time": now.isoformat()
     }), 200
 
@@ -76,15 +71,12 @@ def cron_trigger():
 
     try:
         now = datetime.datetime.now()
-        weekday_idx = now.weekday()
-        style_name = WEEKDAY_STYLES.get(weekday_idx, "cosmic")
-
         catalog = QuotesCatalog()
-        entry = catalog.get_entry_for_today(weekday_idx)
+        entry = catalog.get_entry_for_today()
 
-        output_filename = f"card_{now.strftime('%Y%m%d')}_{style_name}.png"
+        output_filename = f"card_{now.strftime('%Y%m%d')}_apple_notes.png"
         output_path = os.path.join(paths.output_dir, output_filename)
-        card_path = render_card_for_today(entry, weekday_idx, output_path=output_path)
+        card_path = render_card_for_today(entry, 0, output_path=output_path)
 
         tweet_1_id, tweet_2_id = twitter_client.post_quote_thread(
             entry=entry,
@@ -97,7 +89,7 @@ def cron_trigger():
                 tweet_id=tweet_1_id,
                 reply_tweet_id=tweet_2_id,
                 entry=entry,
-                style_used=style_name
+                style_used="apple_notes"
             )
             catalog.mark_posted(entry.get("id", ""))
 
@@ -105,8 +97,8 @@ def cron_trigger():
                 "success": True,
                 "tweet_1_id": tweet_1_id,
                 "tweet_2_id": tweet_2_id,
-                "quote": entry["quote"],
-                "author": entry["author"],
+                "quote": entry.get("quote", ""),
+                "category": entry.get("category", "SIDE QUEST"),
                 "url": f"https://x.com/{twitter_config.handle.strip('@')}/status/{tweet_1_id}"
             }), 200
         else:
@@ -122,89 +114,20 @@ def cron_trigger():
 @app.route("/sunday", methods=["GET", "POST", "HEAD"])
 @app.route("/cron/sunday", methods=["GET", "POST", "HEAD"])
 def cron_sunday_trigger():
-    """
-    Dedicated webhook endpoint for Sunday Reset execution.
-    Can be scheduled for Sunday evenings (e.g. 6:00 PM EST).
-    Usage: GET /cron/sunday?secret=YOUR_SECRET (or GET /sunday?secret=YOUR_SECRET)
-    """
-    if request.method == "HEAD":
-        return "", 200
-
-    secret = request.args.get("secret", "")
-    if CRON_SECRET and secret != CRON_SECRET:
-        return jsonify({"error": "Unauthorized. Invalid secret."}), 401
-
-    if not twitter_config.daily_posting_enabled:
-        return jsonify({
-            "success": False,
-            "paused": True,
-            "message": "Sunday Reset posting is paused for account safety during cooling-off period. Set ENABLE_DAILY_POSTING=true to re-enable."
-        }), 200
-
-    try:
-        now = datetime.datetime.now()
-        weekday_idx = 6  # Force Sunday Reset
-        style_name = "obsidian"
-
-        catalog = QuotesCatalog()
-        entry = catalog.get_entry_for_today(weekday_idx)
-
-        output_filename = f"card_{now.strftime('%Y%m%d')}_sunday_reset.png"
-        output_path = os.path.join(paths.output_dir, output_filename)
-        card_path = render_card_for_today(entry, weekday_idx, output_path=output_path)
-
-        tweet_1_id, tweet_2_id = twitter_client.post_quote_thread(
-            entry=entry,
-            image_path=card_path,
-            dry_run=False
-        )
-
-        if tweet_1_id:
-            db_manager.log_post(
-                tweet_id=tweet_1_id,
-                reply_tweet_id=tweet_2_id,
-                entry=entry,
-                style_used=style_name
-            )
-            catalog.mark_posted(entry.get("id", ""))
-
-            return jsonify({
-                "success": True,
-                "theme": "Sunday Reset",
-                "tweet_1_id": tweet_1_id,
-                "tweet_2_id": tweet_2_id,
-                "quote": entry["quote"],
-                "author": entry["author"],
-                "url": f"https://x.com/{twitter_config.handle.strip('@')}/status/{tweet_1_id}"
-            }), 200
-        else:
-            return jsonify({
-                "success": False,
-                "error": "Failed to post Sunday Reset thread. Check server logs."
-            }), 500
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    """Alias for cron_trigger: day themes removed in favor of dynamic side quest pool."""
+    return cron_trigger()
 
 
 @app.route("/preview", methods=["GET"])
 def preview_card():
-    """Generate and return today's card (or Sunday Reset if ?day=sunday) directly in the browser."""
+    """Generate and return an Apple Notes card directly in the browser."""
     now = datetime.datetime.now()
-    day_param = request.args.get("day", "").lower()
-    if day_param in ["sunday", "sun", "6"]:
-        weekday_idx = 6
-    else:
-        weekday_idx = now.weekday()
-
-    style_name = WEEKDAY_STYLES.get(weekday_idx, "obsidian")
-
     catalog = QuotesCatalog()
-    entry = catalog.get_entry_for_today(weekday_idx)
+    entry = catalog.get_entry_for_today()
 
-    output_filename = f"preview_{now.strftime('%Y%m%d')}_{style_name}.png"
+    output_filename = f"preview_{now.strftime('%Y%m%d')}_apple_notes.png"
     output_path = os.path.join(paths.output_dir, output_filename)
-    card_path = render_card_for_today(entry, weekday_idx, output_path=output_path)
+    card_path = render_card_for_today(entry, output_path=output_path)
 
     return send_file(card_path, mimetype="image/png")
 

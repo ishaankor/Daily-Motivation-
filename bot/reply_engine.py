@@ -18,31 +18,23 @@ from bot.database import db_manager
 
 
 NICHE_QUERIES = [
-    '"feeling burnt out"',
-    '"mentally exhausted"',
-    '"drained from work"',
-    '"exhausted from work"',
-    '"burnt out today"',
-    '"so tired of working so hard"',
-    
+    '"need to lock in"',
+    '"gotta lock in"',
+    '"trying to lock in"',
+    '"procrastinating on my"',
+    '"procrastinating on this"',
+    '"doomscrolling instead of"',
+    '"zero motivation to study"',
+    '"zero motivation to work"',
+    '"cant focus on work"',
+    '"academic comeback"',
     '"struggling to stay consistent"',
     '"struggling with consistency"',
-    '"procrastinating on"',
-    '"hard to stay focused"',
-    '"need some discipline"',
-    '"trying to build good habits"',
-    '"cant focus today"',
-    '"zero motivation today"',
-    
+    '"fighting with css"',
+    '"building my app"',
     '"building in public"',
-    '"imposter syndrome hitting"',
-    '"building a startup"',
     '"solo founder"',
-    '"indie hacker"',
-    
-    '"feeling stuck in life"',
-    '"feeling so overwhelmed"',
-    '"overwhelmed with everything"'
+    '"indie hacker"'
 ]
 
 BLACKLIST_TERMS = [
