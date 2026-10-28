@@ -11,6 +11,8 @@ services:
         value: 3.11.9
       - key: HANDLE
         value: "@MotivationFTD"
+      - key: ENABLE_DAILY_POSTING
+        value: "true"
       - key: GROQ_MODEL
         value: "openai/gpt-oss-120b"
       - key: DB_HOST

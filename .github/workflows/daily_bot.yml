@@ -1,13 +1,9 @@
-name: Daily Motivation Twitter Bot Cron (PAUSED)
+name: Daily Motivation Twitter Bot Cron
 
-# SCHEDULE PAUSED: Paused during account cooling-off period to clear ghost ban.
-# To re-enable, uncomment the schedule block below.
 on:
-  # schedule:
-  #   # Monday through Saturday at 9:00 AM EST (13:00 UTC)
-  #   - cron: '0 13 * * 1-6'
-  #   # Sunday Reset at 6:00 PM EST (22:00 UTC)
-  #   - cron: '0 22 * * 0'
+  schedule:
+    # Daily at 9:00 AM EST (13:00 UTC)
+    - cron: '0 13 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI anytime
 
 jobs:
@@ -31,13 +27,8 @@ jobs:
           echo "Sending wake-up ping to ${CLEAN_URL}/ping..."
           curl -sS -I --connect-timeout 60 --max-time 90 "${CLEAN_URL}/ping" || true
 
-          # Step 2: Determine appropriate endpoint (Sunday Reset vs Daily)
-          DAY_OF_WEEK=$(date -u +%u) # 1=Mon, ..., 7=Sun
-          if [ "$DAY_OF_WEEK" -eq 7 ]; then
-            ENDPOINT="${CLEAN_URL}/cron/sunday"
-          else
-            ENDPOINT="${CLEAN_URL}/cron/daily"
-          fi
+          # Step 2: Trigger daily side quest post
+          ENDPOINT="${CLEAN_URL}/cron/daily"
 
           echo "Triggering post webhook: ${ENDPOINT}"
           RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" --connect-timeout 60 --max-time 120 -X GET "${ENDPOINT}?secret=${CRON_SECRET}")
