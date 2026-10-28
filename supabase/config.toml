@@ -1,0 +1,5 @@
+# Supabase Project Configuration
+project_id = "xprikamuiprhvovypaoi"
+
+[functions.keep-alive]
+verify_jwt = false

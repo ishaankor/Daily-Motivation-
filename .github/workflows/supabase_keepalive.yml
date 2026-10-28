@@ -1,0 +1,27 @@
+name: Supabase Database Keep-Alive
+
+on:
+  schedule:
+    # Runs every 3 days at 12:00 UTC (well within Supabase's 7-day auto-pause threshold)
+    - cron: '0 12 */3 * *'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub Actions tab
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Keep-Alive Edge Function
+        run: |
+          echo "Pinging Supabase keep-alive edge function..."
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" --connect-timeout 30 --max-time 60 -X GET "https://xprikamuiprhvovypaoi.supabase.co/functions/v1/keep-alive")
+          HTTP_BODY=$(echo "$RESPONSE" | sed -e '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1 | cut -d: -f2)
+
+          echo "Response: $HTTP_BODY"
+          echo "Status Code: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✓ Supabase database successfully pinged. 7-day inactivity pause reset."
+          else
+            echo "::warning::Keep-alive ping returned status $HTTP_STATUS"
+          fi
