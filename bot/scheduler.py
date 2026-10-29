@@ -12,10 +12,31 @@ import time
 import schedule
 
 from bot.config import paths, twitter_config
+from bot.twitter_client import twitter_client
 import random
 from main import run_daily_workflow
 
 DEFAULT_POST_TIME = os.getenv("SCHEDULE_TIME", "09:00")
+ENGAGEMENT_SLOTS = ["11:30", "15:30", "19:30"]
+
+
+def scheduled_engagement_job():
+    """Execute one Cohesive Growth Loop cycle with organic human timing jitter."""
+    if not twitter_config.engagement_enabled:
+        print("[Scheduler] Engagement loop is disabled (ENABLE_ENGAGEMENT=false). Skipping slot.")
+        return
+
+    now = datetime.datetime.now()
+    jitter_sec = random.randint(45, 720)
+    print(f"\n⏰ GROWTH LOOP TRIGGER: {now.strftime('%I:%M %p')} (waiting {jitter_sec // 60}m {jitter_sec % 60}s human jitter)...")
+    time.sleep(jitter_sec)
+
+    try:
+        twitter_client.run_engagement(count=1, dry_run=False, mode="auto")
+    except Exception as e:
+        print(f"[Scheduler Error] Growth loop execution failed: {e}")
+
+    print_next_run()
 
 
 def scheduled_job():
@@ -71,7 +92,11 @@ def start_scheduler(post_time: str = DEFAULT_POST_TIME, run_immediately: bool = 
         scheduled_job()
 
     schedule.every().day.at(post_time).do(scheduled_job)
-    print(f"✓ Daily job registered at {post_time}")
+    print(f"✓ Daily post job registered at {post_time}")
+
+    for slot in ENGAGEMENT_SLOTS:
+        schedule.every().day.at(slot).do(scheduled_engagement_job)
+    print(f"✓ Growth Loop slots registered at: {', '.join(ENGAGEMENT_SLOTS)} (Active: {twitter_config.engagement_enabled})")
     print_next_run()
 
     print("Scheduler running. Press Ctrl+C to stop.\n")
