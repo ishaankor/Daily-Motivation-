@@ -393,5 +393,86 @@ class DatabaseManager:
 
         return results
 
+    def get_reply_velocity_status(
+        self,
+        max_daily: int = 3,
+        min_cooldown_hours: float = 3.0
+    ) -> Dict[str, Any]:
+        """
+        Check anti-ghost-ban velocity limits before sending an outreach reply:
+        1. Total replies sent in the last 24 hours vs max_daily cap.
+        2. Hours elapsed since the most recent reply vs min_cooldown_hours.
+        """
+        replies_24h = 0
+        hours_since_last: Optional[float] = None
+
+        if not self.use_sqlite:
+            pg_conn = self.get_postgres_connection()
+            if pg_conn:
+                try:
+                    with pg_conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT COUNT(*),
+                                   EXTRACT(EPOCH FROM (NOW() - MAX(created_at))) / 3600.0
+                            FROM bot_replies
+                            WHERE created_at >= NOW() - INTERVAL '24 hours';
+                        """)
+                        row = cur.fetchone()
+                        if row:
+                            replies_24h = int(row[0] or 0)
+                            if row[1] is not None:
+                                hours_since_last = max(0.0, float(row[1]))
+                    pg_conn.close()
+                except Exception as e:
+                    print(f"[Database] Error checking velocity in PostgreSQL: {e}")
+
+        if self.use_sqlite or (replies_24h == 0 and hours_since_last is None):
+            try:
+                sq_conn = self.get_sqlite_connection()
+                cur = sq_conn.cursor()
+                cur.execute("""
+                    SELECT COUNT(*),
+                           (julianday('now') - julianday(MAX(created_at))) * 24.0
+                    FROM bot_replies
+                    WHERE created_at >= datetime('now', '-24 hours');
+                """)
+                row = cur.fetchone()
+                if row:
+                    sq_count = int(row[0] or 0)
+                    if sq_count > replies_24h:
+                        replies_24h = sq_count
+                        if row[1] is not None:
+                            hours_since_last = max(0.0, float(row[1]))
+                sq_conn.close()
+            except Exception as e:
+                print(f"[Database] Error checking velocity in SQLite: {e}")
+
+        if replies_24h >= max_daily:
+            return {
+                "can_reply": False,
+                "reason": f"Daily outreach cap reached ({replies_24h}/{max_daily} replies in last 24h).",
+                "replies_last_24h": replies_24h,
+                "hours_since_last_reply": hours_since_last
+            }
+
+        if hours_since_last is not None and hours_since_last < min_cooldown_hours:
+            remaining_min = int((min_cooldown_hours - hours_since_last) * 60)
+            return {
+                "can_reply": False,
+                "reason": (
+                    f"Cooldown active: last reply was {hours_since_last:.1f}h ago "
+                    f"(min gap: {min_cooldown_hours:.1f}h, ~{remaining_min}m remaining)."
+                ),
+                "replies_last_24h": replies_24h,
+                "hours_since_last_reply": hours_since_last
+            }
+
+        return {
+            "can_reply": True,
+            "reason": "Velocity within safe human bounds.",
+            "replies_last_24h": replies_24h,
+            "hours_since_last_reply": hours_since_last
+        }
+
 
 db_manager = DatabaseManager()

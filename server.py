@@ -168,11 +168,11 @@ def cron_engage_trigger():
         }), 200
 
     try:
-        count_param = request.args.get("count", "2")
+        count_param = request.args.get("count", "1")
         try:
-            count = min(max(int(count_param), 1), 3)  # Hard cap between 1 and 3 per run for safety
+            count = min(max(int(count_param), 1), 2)  # Hard cap between 1 and 2 per run for anti-ghost-ban safety
         except ValueError:
-            count = 2
+            count = 1
 
         dry_run_param = request.args.get("dry_run", "false").lower()
         dry_run = dry_run_param in ["true", "1", "yes"]
@@ -190,7 +190,8 @@ def cron_engage_trigger():
             count=count,
             dry_run=dry_run,
             query_override=query_override,
-            max_age_hours=max_age_hours
+            max_age_hours=max_age_hours,
+            mode=request.args.get("mode", "auto")
         )
 
         status_code = 200 if result.get("success") else 500

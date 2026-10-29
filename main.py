@@ -222,23 +222,27 @@ def view_replies_history():
 
 
 def run_engagement_cli(
-    count: int = 2,
+    count: int = 1,
     dry_run: bool = False,
     query: Optional[str] = None,
-    max_age_hours: Optional[float] = None
+    max_age_hours: Optional[float] = None,
+    mode: str = "auto"
 ):
-    """Run the stealth engagement reply engine from the command line."""
+    """Run the cohesive growth loop & stealth engagement engine from the command line."""
     results = twitter_client.run_engagement(
         count=count,
         dry_run=dry_run,
         query_override=query,
-        max_age_hours=max_age_hours
+        max_age_hours=max_age_hours,
+        mode=mode
     )
     print("\n" + "=" * 60)
     print("            ENGAGEMENT SUMMARY")
     print("=" * 60)
     print(f"Success:        {results.get('success', False)}")
-    print(f"Replies Posted: {results.get('replies_posted', 0)}")
+    print(f"Actions Posted: {results.get('replies_posted', 0)}")
+    if results.get("skipped"):
+        print(f"Skipped:        {results.get('reason')}")
     if results.get("error"):
         print(f"Error:          {results.get('error')}")
     print("=" * 60)
@@ -251,10 +255,11 @@ def main():
     parser.add_argument("--post-today", action="store_true", help="Post today's quote + card + backstory live to Twitter")
     parser.add_argument("--sunday-reset", action="store_true", help="Simulate Sunday Reset post and card preview")
     parser.add_argument("--post-sunday", action="store_true", help="Post Sunday Reset live to Twitter")
-    parser.add_argument("--engage", action="store_true", help="Run stealth human engagement reply engine")
-    parser.add_argument("--count", type=int, default=2, help="Number of replies for --engage (default: 2)")
+    parser.add_argument("--engage", action="store_true", help="Run cohesive growth loop (inbound author replies + scored outreach)")
+    parser.add_argument("--mode", choices=["auto", "reply", "quote"], default="auto", help="Outreach mode for --engage: 'auto' (smart mix), 'reply', or 'quote'")
+    parser.add_argument("--count", type=int, default=1, help="Number of outbound actions for --engage (default: 1 for anti-ghost-ban safety)")
     parser.add_argument("--query", type=str, default=None, help="Specific search query override for --engage")
-    parser.add_argument("--max-age", type=float, default=None, help="Max tweet age in hours for --engage (default: 12h from config)")
+    parser.add_argument("--max-age", type=float, default=None, help="Max tweet age in hours for --engage (default: 4.0h from config)")
     parser.add_argument("--replies", action="store_true", help="View recent engagement replies from database")
     parser.add_argument("--schedule", action="store_true", help="Start background daily scheduler (runs every day at --time)")
     parser.add_argument("--time", type=str, default="09:00", help="Posting time in 24h format for --schedule (default: 09:00)")
@@ -270,7 +275,8 @@ def main():
             count=args.count,
             dry_run=args.dry_run,
             query=args.query,
-            max_age_hours=args.max_age
+            max_age_hours=args.max_age,
+            mode=args.mode
         )
     elif args.replies:
         view_replies_history()

@@ -53,17 +53,61 @@ _apply_twikit_runtime_patch()
 
 
 class TwitterClient:
-    """Handles image uploads and threaded tweet creation via twikit (100% free, no API credits)."""
+    """
+    Handles image uploads, threaded tweet creation, and hybrid anti-ghost-ban outreach replies.
+    Uses twikit for 100% free read/search/media, and supports Official X API v2 (OAuth 1.0a)
+    for write replies to avoid datacenter web-cookie deboosting.
+    """
 
     def __init__(self):
         self.twikit_client: Optional[TwikitClient] = None
+        self.tweepy_client: Optional[Any] = None
         self._authenticate()
+        self._init_official_api()
+
+    def _create_twikit_instance(self) -> TwikitClient:
+        """Create TwikitClient with optional residential proxy to protect IP reputation."""
+        proxy = twitter_config.proxy_url.strip() if twitter_config.proxy_url else None
+        if proxy:
+            try:
+                return TwikitClient("en-US", proxy=proxy)
+            except TypeError:
+                client = TwikitClient("en-US")
+                if hasattr(client, "proxy"):
+                    client.proxy = proxy
+                return client
+        return TwikitClient("en-US")
+
+    def _init_official_api(self):
+        """
+        Initialize Official X API v2 client (OAuth 1.0a User Context) if keys are configured.
+        Official API v2 write calls (Free tier allows 1,500 tweets/month) are exempt from
+        datacenter web-cookie fingerprint penalties on outreach replies.
+        """
+        if all([
+            twitter_config.api_key,
+            twitter_config.api_secret_key,
+            twitter_config.access_token,
+            twitter_config.access_token_secret
+        ]):
+            try:
+                import tweepy
+                self.tweepy_client = tweepy.Client(
+                    consumer_key=twitter_config.api_key,
+                    consumer_secret=twitter_config.api_secret_key,
+                    access_token=twitter_config.access_token,
+                    access_token_secret=twitter_config.access_token_secret,
+                    wait_on_rate_limit=False
+                )
+                print("[Twitter] Official X API v2 OAuth 1.0a client initialized (hybrid write protection active).")
+            except Exception as e:
+                print(f"[Twitter] Could not initialize Official X API v2 client: {e}")
 
     def _authenticate(self):
         """Initialize twikit client from cookies.json or environment."""
         if os.path.exists(COOKIES_FILE):
             try:
-                client = TwikitClient("en-US")
+                client = self._create_twikit_instance()
                 client.load_cookies(COOKIES_FILE)
                 self.twikit_client = client
                 print(f"[Twitter] Authenticated via {COOKIES_FILE} (twikit engine).")
@@ -76,7 +120,7 @@ class TwitterClient:
         env_ct0 = os.getenv("TWITTER_CT0")
         if env_auth_token and env_ct0:
             try:
-                client = TwikitClient("en-US")
+                client = self._create_twikit_instance()
                 client.set_cookies({
                     "auth_token": env_auth_token,
                     "ct0": env_ct0
@@ -184,22 +228,25 @@ class TwitterClient:
 
     def run_engagement(
         self,
-        count: int = 2,
+        count: int = 1,
         dry_run: bool = False,
         query_override: Optional[str] = None,
-        max_age_hours: Optional[float] = None
+        max_age_hours: Optional[float] = None,
+        mode: str = "auto"
     ) -> Dict[str, Any]:
         """
-        Execute stealth human engagement cycle:
-        Finds organic tweets, generates fruitful peer replies, and posts safely.
+        Execute cohesive growth loop:
+        Inbound thread comment replies + Scored discovery + Quote-Tweet/Reply outreach.
         """
         from bot.reply_engine import run_engagement_cycle
         return asyncio.run(run_engagement_cycle(
             twikit_client=self.twikit_client,
+            tweepy_client=self.tweepy_client,
             count=count,
             dry_run=dry_run,
             query_override=query_override,
-            max_age_hours=max_age_hours
+            max_age_hours=max_age_hours,
+            mode=mode
         ))
 
 

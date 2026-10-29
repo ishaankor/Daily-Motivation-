@@ -94,12 +94,29 @@ def format_tweet_1(entry: Dict[str, Any]) -> str:
     return entry.get("hook", "").strip()
 
 
+REPLY_MAGNET_QUESTIONS = [
+    "Be honest: what side quest are you using to avoid your real work today?",
+    "What is the one tab or chore you're using to procrastinate right now?",
+    "What's the 5-minute task you've been putting off all afternoon?",
+    "Which fake-productive habit is winning on your screen today?"
+]
+
+
 def format_tweet_2(entry: Dict[str, Any]) -> str:
-    """Format secondary tweet: Formula 2 thread reply (NO GURU JARGON)."""
-    t2 = entry.get("tweet_2")
-    if t2:
-        return t2.strip()
-    return entry.get("backstory", "").strip()
+    """
+    Format secondary tweet: Formula 2 thread reply + low-friction confession hook
+    to convert profile visitors into thread commenters (27x-150x Heavy Ranker boost).
+    """
+    t2 = (entry.get("tweet_2") or entry.get("backstory") or "").strip()
+    if not t2:
+        return ""
+    if "?" not in t2:
+        entry_id = str(entry.get("id") or t2)
+        hook_q = REPLY_MAGNET_QUESTIONS[sum(ord(c) for c in entry_id) % len(REPLY_MAGNET_QUESTIONS)]
+        combined = f"{t2}\n\n{hook_q}"
+        if len(combined) <= 250:
+            return combined
+    return t2
 
 
 def validate_character_limits(entry: Dict[str, Any]) -> bool:
@@ -304,7 +321,7 @@ def generate_quote_with_groq(
         "Paragraph 1 (The Setup): A specific, funny, deadpan description of an avoidance behavior you caught yourself doing (e.g. cleaning, researching gear, tweaking playlists, organizing Notion).\n"
         "Paragraph 2 (The Reality Check): A short, dry 1-sentence truth showing why it didn't solve anything (e.g. 'The paprika is in alphabetical order. The client is still waiting.').\n"
         "Paragraph 3 (The Motivation): A grounded, practical call to action (e.g. 'Step away from the seasonings. Open the document. Finish the draft.').\n\n"
-        "TWEET 2 (Thread Reply): 1-2 calm, natural sentences delivering a thoughtful insight on why we avoid uncomfortable work.\n\n"
+        "TWEET 2 (Thread Reply & Engagement Hook): 1 calm, natural sentence delivering an insight on why we avoid uncomfortable work, followed by a casual 1-sentence question asking readers what 'side quest' they are using to procrastinate today.\n\n"
         "GOLD-STANDARD HUMAN EXAMPLES:\n\n"
         "Example 1:\n"
         "{\n"
@@ -533,57 +550,147 @@ BANNED_REPLY_STARTERS = (
     "honestly,", "honestly ", "totally,", "totally ", "so true,", "so true ",
     "i agree,", "i completely agree,", "it sounds like", "as someone who",
     "remember,", "remember that", "take a deep breath", "as they say",
-    "dear friend", "hello", "hey there"
+    "dear friend", "hello", "hey there", "great post", "love this"
 )
 
 BANNED_REPLY_CLICHES = [
     "future self", "listen to your body", "give yourself permission",
     "heavy mental load", "take a deep breath", "it's okay to not be okay",
     "mental static", "prescription for", "nourish the soul", "doormat",
-    "crush it", "delve"
+    "crush it", "delve", "insane work bro", "put the phone in another room",
+    "toss the phone", "canonical builder experience", "rise and grind"
 ]
 
 
-def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 2) -> Optional[str]:
+def _extract_word_trigrams(text: str) -> set:
+    """Extract lowercase 3-word sequences to prevent repetitive n-gram signatures across replies."""
+    import re
+    words = re.findall(r"\b[a-zA-Z']+\b", text.lower())
+    if len(words) < 3:
+        return set()
+    return {" ".join(words[i:i + 3]) for i in range(len(words) - 2)}
+
+
+def is_reply_unique(
+    candidate_reply: str,
+    recent_replies: List[Dict[str, Any]],
+    similarity_threshold: float = 0.25
+) -> tuple:
     """
-    Generate an informal, witty, relatable 'lock-in' peer reply.
-    Calls out procrastination or fear with dry humor and gives a 1-sentence reality check.
+    Ensure an outgoing reply does not share repetitive n-grams or token overlap
+    with recently sent replies (crucial for avoiding X's automated spam filter).
+    """
+    if not recent_replies:
+        return True, "OK"
+
+    cand_clean = candidate_reply.strip().lower()
+    cand_trigrams = _extract_word_trigrams(cand_clean)
+
+    for idx, item in enumerate(recent_replies[:20]):
+        past_reply = (item.get("reply_text") or "").strip()
+        if not past_reply:
+            continue
+
+        past_clean = past_reply.lower()
+        if cand_clean == past_clean:
+            return False, f"Exact duplicate of recent reply #{idx + 1}"
+
+        # Check 3-word phrase overlap
+        past_trigrams = _extract_word_trigrams(past_clean)
+        shared_trigrams = cand_trigrams.intersection(past_trigrams)
+        if shared_trigrams:
+            sample_trigram = next(iter(shared_trigrams))
+            return False, f"Shares 3-word phrase '{sample_trigram}' with recent reply #{idx + 1}"
+
+        # Check Jaccard token similarity
+        sim = calculate_jaccard_similarity(cand_clean, past_clean)
+        if sim >= similarity_threshold:
+            return False, f"Token similarity {sim:.2f} >= {similarity_threshold} with recent reply #{idx + 1}"
+
+    return True, "OK"
+
+
+def generate_human_reply(
+    tweet_text: str,
+    author_name: str = "",
+    recent_replies: Optional[List[Dict[str, Any]]] = None,
+    retries: int = 3
+) -> Optional[str]:
+    """
+    Generate an organic, non-repetitive peer reply designed to spark genuine
+    author engagement (likes/replies) and avoid X spam/ghost-ban heuristics.
     """
     if not ai_config.groq_api_key:
         print("[AI Reply] No GROQ_API_KEY set.")
         return None
+
+    if recent_replies is None:
+        try:
+            from bot.database import db_manager
+            recent_replies = db_manager.get_recent_replies(limit=15)
+        except Exception:
+            recent_replies = []
+
+    avoid_replies_block = ""
+    if recent_replies:
+        snippets = [
+            f"- \"{r.get('reply_text', '').strip()}\""
+            for r in recent_replies[:8]
+            if r.get("reply_text")
+        ]
+        if snippets:
+            avoid_replies_block = (
+                "\nRECENT REPLIES YOU ALREADY SENT (DO NOT REUSE ANY PHRASES, SLANG, OR SENTENCE STRUCTURES FROM THESE):\n"
+                + "\n".join(snippets)
+                + "\n"
+            )
 
     headers = {
         "Authorization": f"Bearer {ai_config.groq_api_key}",
         "Content-Type": "application/json"
     }
 
+    # Rotate subtle conversational angles so replies don't follow a single formula
+    reply_angles = [
+        "dry commiseration + a specific observation about what they mentioned",
+        "witty deadpan observation + a quick, casual question about what they're working on",
+        "relatable builder/student confession showing you've done the exact same thing",
+        "lighthearted reality check without sounding bossy or lecturing"
+    ]
+    chosen_angle = random.choice(reply_angles)
+
     system_prompt = (
-        "You are an ambitious, self-aware 20-something peer on Twitter/X (a builder/student locking in).\n"
-        "Your tone is INFORMAL, CASUAL, WITTY, RELATABLE, and GROUNDED. NEVER PREACHY OR CORPORATE.\n\n"
-        "MISSION: Call out procrastination or self-doubt with dry humor and offer a 1-sentence reality check like a friend in the library or co-working space.\n\n"
-        "CRITICAL RULES:\n"
-        "- Casual, conversational lowercase or relaxed casing (no formal capitalization).\n"
-        "- Natural modern phrasing used authentically: 'lock in', 'cooked', 'doomscrolling', 'side quest', 'unserious', 'rot day', 'insane work', 'we\\'re so back'.\n"
-        "- NO THERAPIST TALK: Never say 'listen to your body', 'give yourself permission', 'it\\'s okay to not be okay'.\n"
-        "- NO CHEESY CORPORATE HUSTLE: Don't tell people to 'rise and grind' or 'crush it'. Keep it dry, funny, and realistic.\n"
-        "- 1 to 2 short sentences (strictly between 50 and 140 characters).\n"
-        "- Output ONLY the reply text itself. NO quotes, NO hashtags, NO links, NO @mentions.\n\n"
-        "AUTHENTIC EXAMPLES:\n"
+        "You are a sharp, self-aware 20-something builder/student replying to a peer on X/Twitter.\n"
+        "Your goal is to write a genuine, dry, conversational comment that makes the author smile, like, or reply back.\n\n"
+        "STEP 1 — RELEVANCE GATE:\n"
+        "If the tweet is NOT a genuine personal post about studying, working, coding, building a project, procrastinating, or trying to focus "
+        "(for example, if it's about sports, video games, politics, fan cams, music stanning, selling something, or tragedy), output the exact single word: SKIP\n\n"
+        "STEP 2 — ANTI-GHOST-BAN & VOICE RULES:\n"
+        "- Sound like a normal person typing a quick reply, NOT a motivational coach or a bot lecturing a stranger.\n"
+        "- DO NOT bark unsolicited commands ('close the tab bro', 'put the phone in another room', 'set a timer'). Strangers mute accounts that boss them around.\n"
+        "- DO NOT overuse repetitive TikTok slang ('cooked', 'insane work bro', 'lock in', 'canonical'). Speak naturally.\n"
+        "- Reference a SPECIFIC detail from their tweet so it is unmistakably written just for them.\n"
+        "- Keep it to 1 short sentence (or 2 very short clauses), strictly between 35 and 140 characters.\n"
+        "- Casual lowercase or normal sentence case is fine, just keep it effortless.\n"
+        "- Output ONLY the reply text (or SKIP). NO quotes, NO hashtags, NO links, NO @mentions, NO robotic emojis (🚀, 🤖, 🧵).\n\n"
+        "EXAMPLES OF HIGH-ENGAGEMENT HUMAN REPLIES:\n"
         "- Tweet: 'procrastinating by organizing my spotify playlist instead of studying for this midterm'\n"
-        "  Reply: 'organizing playlists while your midterm is tomorrow is insane work bro close the tab and review 1 chapter'\n"
-        "- Tweet: 'im cooked for this presentation tomorrow'\n"
-        "  Reply: 'you\\'re not cooked yet. write down 3 bullet points per slide, do 1 practice run, and get some sleep'\n"
+        "  Reply: 'spending 40 minutes curating the soundtrack for a study session that hasn\\'t started yet is a classic trap'\n"
         "- Tweet: 'spent 4 hours fighting css padding instead of launching'\n"
-        "  Reply: 'fighting css padding for 4 hours is a canonical builder experience. ship the ugly version, nobody will notice the 4px difference'\n"
-        "- Tweet: 'zero motivation to lock in today'\n"
-        "  Reply: 'motivation isn\\'t showing up today bro. put the phone in another room, set a 15 min timer, and just start'\n"
-        "- Tweet: 'doomscrolling on tiktok when i have 3 assignments due'\n"
-        "  Reply: 'tiktok algorithm currently winning the battle for your gpa. toss the phone across the bed and lock in for 30 mins'"
+        "  Reply: 'nothing humbles a developer faster than a div refusing to center when you\\'re trying to ship. what are you building?'\n"
+        "- Tweet: 'why do i always deep clean my room the night before a huge deadline'\n"
+        "  Reply: 'my apartment is only ever spotless when i have something terrifying due the next morning'\n"
+        "- Tweet: 'trying to lock in on this landing page copy but my brain is fried'\n"
+        "  Reply: 'writing landing page copy after 4pm feels like reading a foreign language. ugly first draft always wins'"
     )
 
     clean_tweet = tweet_text.strip()
-    user_prompt = f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n\nWrite a witty, casual, relatable peer reply:"
+    user_prompt = (
+        f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n"
+        f"{avoid_replies_block}\n"
+        f"Angle to use: {chosen_angle}.\n"
+        f"Write 1 natural, specific peer reply (35-140 chars), or output SKIP if off-topic:"
+    )
 
     candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
 
@@ -595,8 +702,8 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.85,
-                "max_tokens": 100
+                "temperature": 0.88,
+                "max_tokens": 90
             }
 
             try:
@@ -613,6 +720,10 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                     if (reply.startswith('"') and reply.endswith('"')) or (reply.startswith("'") and reply.endswith("'")):
                         reply = reply[1:-1].strip()
 
+                    if reply.upper() == "SKIP" or reply.upper().startswith("SKIP"):
+                        print("[AI Reply] LLM relevance gate marked tweet as off-topic (SKIP).")
+                        return None
+
                     reply_lower = reply.lower().strip()
 
                     if any(reply_lower.startswith(starter) for starter in BANNED_REPLY_STARTERS):
@@ -623,7 +734,16 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                         print(f"[AI Reply] Rejected cliché in reply: '{reply}'. Retrying...")
                         continue
 
-                    if 20 <= len(reply) <= 200 and "#" not in reply and "http" not in reply:
+                    if any(bad_emoji in reply for bad_emoji in ("🚀", "🤖", "🧵", "🔥", "💯")):
+                        print(f"[AI Reply] Rejected bot emoji in reply: '{reply}'. Retrying...")
+                        continue
+
+                    unique_ok, unique_reason = is_reply_unique(reply, recent_replies or [])
+                    if not unique_ok:
+                        print(f"[AI Reply] Rejected non-unique reply ({unique_reason}): '{reply}'. Retrying...")
+                        continue
+
+                    if 30 <= len(reply) <= 180 and "#" not in reply and "http" not in reply and "@" not in reply:
                         return reply
                     else:
                         print(f"[AI Reply] Reply failed quality/length check ({len(reply)} chars): '{reply}'. Retrying...")
@@ -635,4 +755,137 @@ def generate_human_reply(tweet_text: str, author_name: str = "", retries: int = 
                 print(f"[AI Reply] Exception calling Groq ({model}): {e}")
                 time.sleep(1)
 
+    return None
+
+
+def generate_quote_tweet_commentary(
+    tweet_text: str,
+    author_name: str = "",
+    recent_replies: Optional[List[Dict[str, Any]]] = None,
+    retries: int = 3
+) -> Optional[str]:
+    """
+    Generate a deadpan 'Field Note / Procrastination Archive' observation for Quote-Tweeting
+    a relatable post. Quote Tweets appear on the main timeline, notify the author, and carry
+    zero cold-reply deboosting risk.
+    """
+    if not ai_config.groq_api_key:
+        return None
+
+    if recent_replies is None:
+        try:
+            from bot.database import db_manager
+            recent_replies = db_manager.get_recent_replies(limit=15)
+        except Exception:
+            recent_replies = []
+
+    headers = {
+        "Authorization": f"Bearer {ai_config.groq_api_key}",
+        "Content-Type": "application/json"
+    }
+
+    system_prompt = (
+        "You run 'The Procrastination Archive' on X — an observational account documenting absurdly specific ways builders and students avoid their real work.\n"
+        "You are Quote-Tweeting someone's relatable post about procrastinating, coding struggles, or studying.\n\n"
+        "STEP 1 — RELEVANCE GATE:\n"
+        "If the tweet is NOT a genuine personal post about procrastinating, studying, coding, building, or avoiding work, output the exact single word: SKIP\n\n"
+        "STEP 2 — QUOTE-TWEET VOICE RULES:\n"
+        "- Write a witty, deadpan 1-sentence observation that validates their struggle and makes both their followers and yours laugh.\n"
+        "- Reference the specific thing they mentioned (e.g., CSS, Notion, playlists, cleaning, midterms).\n"
+        "- Strictly between 40 and 140 characters. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
+        "EXAMPLES:\n"
+        "- Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
+        "  Quote: 'Nothing makes an apartment cleaner than a terrifying deadline due at 9am.'\n"
+        "- Tweet: 'spent 3 hours tweaking my neovim config instead of building the feature'\n"
+        "  Quote: 'Tweaking your editor config for 3 hours to save 4 seconds of typing is a rite of passage.'"
+    )
+
+    user_prompt = (
+        f"Tweet from {author_name or 'someone'}:\n\"{tweet_text.strip()}\"\n\n"
+        f"Write a deadpan 1-sentence Quote-Tweet observation (40-140 chars), or output SKIP:"
+    )
+
+    candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
+
+    for model in candidate_models:
+        for _ in range(retries):
+            try:
+                response = requests.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        "temperature": 0.85,
+                        "max_tokens": 80
+                    },
+                    timeout=15
+                )
+                if response.status_code == 200:
+                    qt_text = response.json()["choices"][0]["message"]["content"].strip().strip("\"'")
+                    if qt_text.upper().startswith("SKIP"):
+                        return None
+                    unique_ok, _ = is_reply_unique(qt_text, recent_replies or [])
+                    if unique_ok and 35 <= len(qt_text) <= 160 and "#" not in qt_text and "http" not in qt_text:
+                        return qt_text
+            except Exception:
+                time.sleep(1)
+
+    return None
+
+
+def generate_author_back_reply(
+    parent_tweet_text: str,
+    comment_text: str,
+    commenter_name: str = ""
+) -> Optional[str]:
+    """
+    Generate a warm, witty author reply to someone who commented on OUR thread.
+    In X's Heavy Ranker, Author-Reply-to-Comment carries a 75x-150x algorithmic boost
+    and has 0% ghost-ban risk.
+    """
+    if not ai_config.groq_api_key:
+        return None
+
+    headers = {
+        "Authorization": f"Bearer {ai_config.groq_api_key}",
+        "Content-Type": "application/json"
+    }
+
+    system_prompt = (
+        "You are the creator of a witty productivity/builder account on X.\n"
+        "A reader just replied to your thread. Write a brief, warm, witty 1-sentence reply back to them.\n"
+        "Keep it casual, appreciative, and grounded (25 to 120 characters). No hashtags, no links, no @mentions."
+    )
+    user_prompt = (
+        f"Our original tweet: \"{parent_tweet_text.strip()}\"\n"
+        f"Reader ({commenter_name or 'peer'}) commented: \"{comment_text.strip()}\"\n\n"
+        f"Write a short, witty 1-sentence reply back:"
+    )
+
+    for model in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    "temperature": 0.85,
+                    "max_tokens": 70
+                },
+                timeout=15
+            )
+            if response.status_code == 200:
+                reply = response.json()["choices"][0]["message"]["content"].strip().strip("\"'")
+                if 20 <= len(reply) <= 160 and "#" not in reply and "http" not in reply:
+                    return reply
+        except Exception:
+            pass
     return None
