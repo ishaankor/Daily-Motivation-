@@ -1,12 +1,9 @@
 name: Daily Motivation Twitter Bot Cron
 
 on:
-  schedule:
-    # Daily Main Post at 9:00 AM EST (13:00 UTC)
-    - cron: '0 13 * * *'
-    # Spaced Growth Loop Outreach Slots (11:30 AM, 3:30 PM, 7:30 PM EST -> 15:30, 19:30, 23:30 UTC)
-    - cron: '30 15,19,23 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+  # Scheduled pings are handled externally via cron-job.org.
+  # Keeping workflow_dispatch only for manual backup triggers if ever needed.
+  workflow_dispatch:
     inputs:
       action:
         description: 'Action to trigger (daily or engage)'
