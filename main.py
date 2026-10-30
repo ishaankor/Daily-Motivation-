@@ -256,7 +256,7 @@ def main():
     parser.add_argument("--sunday-reset", action="store_true", help="Simulate Sunday Reset post and card preview")
     parser.add_argument("--post-sunday", action="store_true", help="Post Sunday Reset live to Twitter")
     parser.add_argument("--engage", action="store_true", help="Run cohesive growth loop (inbound author replies + scored outreach)")
-    parser.add_argument("--mode", choices=["auto", "reply", "quote"], default="auto", help="Outreach mode for --engage: 'auto' (smart mix), 'reply', or 'quote'")
+    parser.add_argument("--mode", "--engage-mode", dest="mode", choices=["auto", "reply", "quote"], default="auto", help="Outreach mode for --engage: 'auto' (smart mix), 'reply', or 'quote'")
     parser.add_argument("--count", type=int, default=1, help="Number of outbound actions for --engage (default: 1 for anti-ghost-ban safety)")
     parser.add_argument("--query", type=str, default=None, help="Specific search query override for --engage")
     parser.add_argument("--max-age", type=float, default=None, help="Max tweet age in hours for --engage (default: 4.0h from config)")

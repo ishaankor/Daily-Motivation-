@@ -5,6 +5,7 @@ Engineered for Formula 2: "The Absurdly Specific Side Quest" (Pure conversationa
 import json
 import os
 import random
+import re
 import time
 from typing import Dict, Any, List, Optional
 import requests
@@ -560,7 +561,9 @@ BANNED_REPLY_CLICHES = [
     "crush it", "delve", "insane work bro", "put the phone in another room",
     "toss the phone", "canonical builder experience", "rise and grind",
     "schadenfreude", "smugly", "rite of passage", "masterclass", "humbles a",
-    "what are you building anyway", "classic trap", "foreign language"
+    "what are you building anyway", "classic trap", "foreign language",
+    "origin story", "mysterious mentor", "lurking in the shadows",
+    "movie villain", "training arc", "isaac newton"
 ]
 
 
@@ -654,14 +657,14 @@ def generate_human_reply(
 
     system_prompt = (
         "You are a supportive, funny, relatable 20-something friend on X.\n"
-        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time (like a friend in the library who makes you laugh about procrastinating and then hypes you up to knock out 15 minutes of work).\n\n"
+        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time (like a friend in the library who makes you laugh about procrastinating or burnout and then hypes you up to knock out 15 minutes of work).\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is NOT a personal post about studying, working, coding, building a project, procrastinating, or trying to focus "
-        "(for example, if it's about sports, video games, politics, fan cams, celebrity drama, selling something, or tragedy), output the exact single word: SKIP\n\n"
+        "If the tweet is a personal post about studying, working, coding, building a project, procrastinating, burnout, creative block, deadlines, or trying to focus, it PASSED — write the reply!\n"
+        "ONLY output the exact single word SKIP if the tweet is completely unrelated (e.g., sports, politics, fan cams, celebrity drama, selling something, or getting fired by HR).\n\n"
         "STEP 2 — THE 2-PART FORMULA (HUMOR + MOTIVATION):\n"
-        "Write 1 to 2 short, natural sentences (45 to 145 characters total):\n"
+        "Write 1 to 2 short, natural sentences (45 to 160 characters total):\n"
         "  1. The Funny Observation: React with light, everyday humor to the exact thing that happened in their tweet.\n"
-        "  2. The Grounded Motivational Push: Give them a warm, bite-sized nudge that makes starting feel easy right now (e.g. 'knock out just 15 minutes', 'write one messy page', 'ship the ugly version first, you got this').\n\n"
+        "  2. The Grounded Motivational Push: Give them a warm, bite-sized nudge that makes starting (or resting after a grind) feel easy right now (e.g. 'knock out just 15 minutes', 'write one messy page', 'ship the ugly version first, you got this').\n\n"
         "CRITICAL VOICE RULES:\n"
         "- Use simple, everyday conversational English. NEVER use pretentious SAT/thesaurus words ('schadenfreude', 'smugly', 'canonical', 'poetic', 'rite of passage', 'masterclass', 'peak').\n"
         "- STAY 100% ON THEIR EXACT TOPIC: Never ask 'what are you building?' unless their tweet explicitly mentions coding or building an app.\n"
@@ -677,15 +680,18 @@ def generate_human_reply(
         "  Reply: 'css has humbled every developer alive. ship the messy version first and fix the pixels later, you\\'re closer than you think'"
     )
 
-    clean_tweet = tweet_text.strip()
+    clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
     user_prompt = (
         f"Tweet:\n\"{clean_tweet}\"\n"
         f"{avoid_replies_block}\n"
-        f"Write a humorous yet genuinely motivating 1-2 sentence reply reacting directly to this tweet (45-145 chars), or output SKIP if off-topic:"
+        f"Write a humorous yet genuinely motivating 1-2 sentence reply reacting directly to this tweet (45-160 chars), or output SKIP if completely off-topic:"
     )
 
+    # Use models enabled in the Groq project with separate TPM pools (120b -> 20b -> compound-mini)
     primary_model = ai_config.groq_model or "openai/gpt-oss-120b"
-    candidate_models = [primary_model, "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    if primary_model == "openai/gpt-oss-20b":
+        primary_model = "openai/gpt-oss-120b"
+    candidate_models = [primary_model, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]
     seen_models = set()
     models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
 
@@ -697,9 +703,10 @@ def generate_human_reply(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.68,
-                "max_tokens": 80
+                "temperature": 0.68
             }
+            if model.startswith("openai/gpt-oss"):
+                payload["reasoning_effort"] = "low"
 
             try:
                 response = requests.post(
@@ -711,7 +718,7 @@ def generate_human_reply(
 
                 if response.status_code == 200:
                     data = response.json()
-                    reply = data["choices"][0]["message"]["content"].strip()
+                    reply = (data["choices"][0]["message"].get("content") or "").strip()
                     if (reply.startswith('"') and reply.endswith('"')) or (reply.startswith("'") and reply.endswith("'")):
                         reply = reply[1:-1].strip()
 
@@ -738,13 +745,17 @@ def generate_human_reply(
                         print(f"[AI Reply] Rejected non-unique reply ({unique_reason}): '{reply}'. Retrying...")
                         continue
 
-                    if 30 <= len(reply) <= 180 and "#" not in reply and "http" not in reply and "@" not in reply:
+                    if 25 <= len(reply) <= 220 and "#" not in reply and "http" not in reply and "@" not in reply:
                         return reply
                     else:
                         print(f"[AI Reply] Reply failed quality/length check ({len(reply)} chars): '{reply}'. Retrying...")
+                elif response.status_code == 429:
+                    print(f"[AI Reply] Model '{model}' hit Groq 429 rate limit; switching to next model pool...")
+                    time.sleep(2.0)
+                    break
                 else:
-                    print(f"[AI Reply] Groq error ({response.status_code}): {response.text}")
-                    time.sleep(1)
+                    print(f"[AI Reply] Groq error on '{model}' ({response.status_code}): {response.text}")
+                    break
 
             except Exception as e:
                 print(f"[AI Reply] Exception calling Groq ({model}): {e}")
@@ -757,11 +768,13 @@ def generate_quote_tweet_commentary(
     tweet_text: str,
     author_name: str = "",
     recent_replies: Optional[List[Dict[str, Any]]] = None,
-    retries: int = 3
+    retries: int = 3,
+    media_urls: Optional[List[str]] = None
 ) -> Optional[str]:
     """
-    Generate a deadpan 'Field Note / Procrastination Archive' observation for Quote-Tweeting
-    a relatable post. Quote Tweets appear on the main timeline, notify the author, and carry
+    Generate a 'Double-Take / Curiosity Gap' observation for Quote-Tweeting
+    a relatable post (including posts with attached photos/images). Quote Tweets appear
+    on the main timeline, render the full image card, notify the author, and carry
     zero cold-reply deboosting risk.
     """
     if not ai_config.groq_api_key:
@@ -779,57 +792,141 @@ def generate_quote_tweet_commentary(
         "Content-Type": "application/json"
     }
 
-    system_prompt = (
-        "You run 'The Procrastination Archive' on X — a humorous and motivating account about how students and builders avoid their work.\n"
-        "You are Quote-Tweeting someone's post about procrastinating, coding struggles, or studying.\n\n"
-        "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is NOT a genuine personal post about procrastinating, studying, coding, building, or avoiding work, output the exact single word: SKIP\n\n"
-        "STEP 2 — QUOTE-TWEET FORMULA (HUMOR + MOTIVATION):\n"
-        "- Write 1-2 short sentences in plain everyday English: first a funny, relatable observation about their specific procrastination, followed by a grounded, encouraging push to start small.\n"
-        "- Never use big thesaurus words ('schadenfreude', 'rite of passage', 'canonical').\n"
-        "- Strictly between 45 and 145 characters. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
-        "EXAMPLES:\n"
-        "- Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
-        "  Quote: 'Nothing makes an apartment cleaner than a 5-page paper due tomorrow. Kitchen is spotless, now just get the ugly first paragraph down.'\n"
-        "- Tweet: 'spent 3 hours tweaking my editor theme instead of writing the code'\n"
-        "  Quote: 'Three hours picking a font to avoid ten minutes of coding happens to all of us. Write one messy function and let momentum take over.'"
+    has_image = bool(media_urls and len(media_urls) > 0)
+    image_instruction = (
+        "- This post has a photo attached (which appears as a big image card below your text), "
+        "so keep your Quote-Tweet short and punchy so it pairs cleanly with the image.\n"
+        if has_image else ""
     )
 
-    user_prompt = (
-        f"Tweet:\n\"{tweet_text.strip()}\"\n\n"
-        f"Write a humorous yet motivating Quote-Tweet (45-145 chars), or output SKIP:"
+    system_prompt = (
+        "You run a funny, brutally honest, and motivating X account for students, builders, and procrastinators.\n"
+        "You are Quote-Tweeting someone's post.\n\n"
+        "STEP 1 — RELEVANCE GATE:\n"
+        "If the tweet is a real personal post about procrastinating, studying, homework, coding, building, working, burnout, or deadlines, it PASSED.\n"
+        "Output the exact single word SKIP if the tweet is unrelated or fake (e.g., sports, esports interviews, financial/forex trading, fictional 'Lecturer: / Student:' dialogue skits, politics, or selling something).\n\n"
+        "STEP 2 — THE VIRAL QUOTE-TWEET FORMULA (HUMOR + MOTIVATION THAT MAKES 100% SENSE):\n"
+        "Write 1 to 2 short, punchy sentences (45 to 140 characters) in plain, everyday English:\n"
+        "  1. The Funny, Brutally Honest Truth: Call out the exact funny reality or excuse in their tweet in a way everyone immediately understands and laughs at.\n"
+        "  2. The Grounded Push: Give a real, practical 5-to-8 word push to start small right now (e.g., 'knock out one page and survive', 'write the ugly first draft', 'do 15 minutes and call it a win').\n"
+        f"{image_instruction}"
+        "CRITICAL RULES:\n"
+        "- MUST MAKE 100% LOGICAL SENSE: Never invent weird metaphors, fictional characters, 'hero origin stories', 'mentors in the shadows', or movie trailer lines. React to what they ACTUALLY said.\n"
+        "- If their tweet mentions a random anime/game character name you don't need, ignore the character name and focus on their actual homework/work struggle.\n"
+        "- Use simple everyday words. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
+        "GOLD-STANDARD QUOTE-TWEET EXAMPLES:\n"
+        "- Quoted Tweet: 'I should really keep catching up on my homework but I deadass have zero motivation... if I don\\'t get off my ass and do something my dad will eviscerate me'\n"
+        "  Quote-Tweet: 'fear of an angry parent has a higher graduation rate than motivation ever will. knock out one page and survive.'\n"
+        "- Quoted Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
+        "  Quote-Tweet: 'nobody cleans harder than someone avoiding a deadline. kitchen is spotless, now go write one terrible paragraph.'\n"
+        "- Quoted Tweet: 'spent 3 hours tweaking my editor theme instead of writing the code'\n"
+        "  Quote-Tweet: 'customizing your setup feels like work until you realize the file is still blank. write the first ugly function.'\n"
+        "- Quoted Tweet: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret' [Photo Attached]\n"
+        "  Quote-Tweet: 'acting panicked in the group chat while quietly locking in at home is undefeated. go ace that exam.'"
     )
+
+    clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
+    media_note = "\n[Note: This tweet also has a photo/image attached that viewers will see right below your Quote-Tweet.]" if has_image else ""
+    user_prompt = (
+        f"Quoted Tweet:\n\"{clean_tweet}\"{media_note}\n\n"
+        f"Write a funny, crystal-clear, and motivating Quote-Tweet (45-140 chars) that directly fits this tweet, or output SKIP if off-topic:"
+    )
+
+    # Optional Pass 0: If the tweet has a photo and a Groq Vision model is enabled, inspect the actual image!
+    if has_image and media_urls:
+        try:
+            vision_resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": (
+                                        f"Quoted Tweet caption: \"{clean_tweet}\"\n"
+                                        "Look at the attached image and caption. Spot a specific visual detail or vibe in the photo "
+                                        "and write a 1-liner 'Double-Take' Quote-Tweet (30-110 chars) that makes viewers zoom into the image, "
+                                        "or output SKIP if off-topic:"
+                                    )
+                                },
+                                {"type": "image_url", "image_url": {"url": media_urls[0]}}
+                            ]
+                        }
+                    ],
+                    "temperature": 0.65
+                },
+                timeout=15
+            )
+            if vision_resp.status_code == 200:
+                v_text = (vision_resp.json()["choices"][0]["message"].get("content") or "").strip().strip("\"'")
+                if v_text.upper().startswith("SKIP"):
+                    print("[AI Quote Vision] Vision gate marked image tweet as off-topic (SKIP).")
+                    return None
+                unique_ok, _ = is_reply_unique(v_text, recent_replies or [])
+                if unique_ok and 25 <= len(v_text) <= 220 and "#" not in v_text and "http" not in v_text:
+                    print("  👁 [Vision Quote-Tweet] Generated using live image inspection!")
+                    return v_text
+        except Exception:
+            pass
 
     primary_model = ai_config.groq_model or "openai/gpt-oss-120b"
-    candidate_models = [primary_model, "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    if primary_model == "openai/gpt-oss-20b":
+        primary_model = "openai/gpt-oss-120b"
+    candidate_models = [primary_model, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]
     seen_models = set()
     models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
 
     for model in models_to_try:
         for _ in range(retries):
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.68
+            }
+            if model.startswith("openai/gpt-oss"):
+                payload["reasoning_effort"] = "low"
+
             try:
                 response = requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers=headers,
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        "temperature": 0.68,
-                        "max_tokens": 80
-                    },
+                    json=payload,
                     timeout=15
                 )
                 if response.status_code == 200:
-                    qt_text = response.json()["choices"][0]["message"]["content"].strip().strip("\"'")
-                    if qt_text.upper().startswith("SKIP"):
+                    qt_text = (response.json()["choices"][0]["message"].get("content") or "").strip().strip("\"'")
+                    if qt_text.upper() == "SKIP" or qt_text.upper().startswith("SKIP"):
+                        print("[AI Quote] LLM relevance gate marked tweet as off-topic (SKIP).")
                         return None
-                    unique_ok, _ = is_reply_unique(qt_text, recent_replies or [])
-                    if unique_ok and 35 <= len(qt_text) <= 160 and "#" not in qt_text and "http" not in qt_text:
+                    qt_lower = qt_text.lower()
+                    if any(cliche in qt_lower for cliche in BANNED_REPLY_CLICHES):
+                        print(f"[AI Quote] Rejected cliché in Quote-Tweet: '{qt_text}'. Retrying...")
+                        continue
+                    unique_ok, unique_reason = is_reply_unique(qt_text, recent_replies or [])
+                    if not unique_ok:
+                        print(f"[AI Quote] Rejected non-unique Quote-Tweet ({unique_reason}): '{qt_text}'. Retrying...")
+                        continue
+                    if 25 <= len(qt_text) <= 220 and "#" not in qt_text and "http" not in qt_text:
                         return qt_text
-            except Exception:
+                    else:
+                        print(f"[AI Quote] Quote-Tweet failed length/format check ({len(qt_text)} chars): '{qt_text}'. Retrying...")
+                elif response.status_code == 429:
+                    print(f"[AI Quote] Model '{model}' hit Groq 429 rate limit; switching to next model pool...")
+                    time.sleep(2.0)
+                    break
+                else:
+                    print(f"[AI Quote] Groq error on '{model}' ({response.status_code}): {response.text}")
+                    break
+            except Exception as e:
+                print(f"[AI Quote] Exception calling Groq ({model}): {e}")
                 time.sleep(1)
 
     return None
@@ -864,25 +961,27 @@ def generate_author_back_reply(
         f"Write a short, witty 1-sentence reply back:"
     )
 
-    for model in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]:
+    for model in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]:
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": 0.85
+        }
+        if model.startswith("openai/gpt-oss"):
+            payload["reasoning_effort"] = "low"
         try:
             response = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers=headers,
-                json={
-                    "model": model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.85,
-                    "max_tokens": 70
-                },
+                json=payload,
                 timeout=15
             )
             if response.status_code == 200:
-                reply = response.json()["choices"][0]["message"]["content"].strip().strip("\"'")
-                if 20 <= len(reply) <= 160 and "#" not in reply and "http" not in reply:
+                reply = (response.json()["choices"][0]["message"].get("content") or "").strip().strip("\"'")
+                if 20 <= len(reply) <= 180 and "#" not in reply and "http" not in reply:
                     return reply
         except Exception:
             pass

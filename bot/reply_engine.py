@@ -21,16 +21,14 @@ from bot.ai_generator import (
 from bot.database import db_manager
 
 
-# High-recall Boolean cluster queries: packs multiple natural phrases into 1 API call
-# so a single search returns 20+ fresh, high-intent human posts from the last 1-4 hours.
+# Rising Wave Surfing Queries: broad, high-volume conversational clusters engineered
+# to be paired with `min_faves:8` (Pass 1) and `min_faves:3` (Pass 2) so every search
+# returns fresh tweets (<1-3h old) that are actively surging in X's "For You" algorithm.
 NICHE_QUERIES = [
-    '("procrastinating" OR "doomscrolling") (study OR studying OR work OR coding OR assignment OR exam OR essay OR project)',
-    '("need to lock in" OR "gotta lock in" OR "trying to lock in" OR "time to lock in")',
-    '("cant focus" OR "can\'t focus" OR "zero motivation" OR "no motivation") (study OR studying OR work OR coding OR today)',
-    '("building in public" OR "side project" OR "indie hacker" OR "solo founder") (bug OR css OR shipping OR launch OR landing page OR stuck)',
-    '("instead of studying" OR "instead of working" OR "supposed to be studying" OR "supposed to be working")',
-    '("due tomorrow" OR "due tonight" OR "midterm tomorrow") (study OR studying OR essay OR lecture OR assignment)',
-    '("academic comeback" OR "lock in for" OR "rot day" OR "brain is fried") (study OR work OR coding OR exam OR semester)'
+    '(procrastinating OR doomscrolling OR "supposed to be studying" OR "instead of working" OR "instead of studying" OR "need to lock in")',
+    '(coding OR debugging OR "side project" OR "building in public" OR "my code" OR shipping) (bug OR tired OR hours OR finally OR launch OR stuck)',
+    '(studying OR midterm OR "due tomorrow" OR lecture OR assignment OR essay OR exam) (hours OR coffee OR sleep OR procrastinating OR cooked OR focus)',
+    '("can\'t focus" OR "zero motivation" OR "burnt out" OR procrastinated) (studying OR coding OR essay OR assignment OR project OR deadline OR homework)'
 ]
 
 BLACKLIST_TERMS = [
@@ -116,6 +114,20 @@ def get_tweet_created_at(tweet) -> Optional[datetime.datetime]:
     return None
 
 
+def get_tweet_photo_urls(tweet) -> List[str]:
+    """Extract direct HTTPS image URLs (pbs.twimg.com) from native Twitter photo attachments."""
+    media_list = getattr(tweet, "media", None)
+    if not isinstance(media_list, (list, tuple)):
+        return []
+    urls: List[str] = []
+    for item in media_list:
+        m_type = getattr(item, "type", "")
+        m_url = getattr(item, "media_url", None) or getattr(item, "source_url", None)
+        if m_type == "photo" and isinstance(m_url, str) and m_url.startswith("http"):
+            urls.append(m_url)
+    return urls
+
+
 def is_tweet_eligible(
     tweet,
     bot_handle: str,
@@ -168,30 +180,36 @@ def is_tweet_eligible(
         if adult_marker in combined_user_info:
             return False, f"User profile contains adult marker: '{adult_marker}'"
 
-    # 3. Follower bounds (avoid bot farms with <10 followers and mega-accounts >40k with high spam-report density)
+    # 3. Follower bounds (avoid bot farms with <10 followers and mega-celebrities >=100k; allow 10 to 99,999 for wave surfing)
     followers = getattr(user, "followers_count", 0) or 0
     if followers < 10:
         return False, f"User follower count too low ({followers}) - likely a bot or dormant"
-    if followers > 40000:
+    if followers >= 100000:
         return False, f"User follower count too high ({followers}) - high risk of spam filters"
 
-    # 4. Reply count (we want threads where our reply will actually be read, not buried in hundreds)
+    # 4. Reply count (allow up to 25 replies so we can surf rising viral threads before they get crowded)
     reply_count = getattr(tweet, "reply_count", 0) or 0
-    if reply_count > 10:
+    if reply_count > 25:
         return False, f"Too many replies ({reply_count}) - reply would get buried"
 
-    # 5. Text length and blacklist
+    # 5. Text length, media vs external links, and blacklist
     text = getattr(tweet, "text", "") or getattr(tweet, "full_text", "") or ""
     text_clean = text.strip()
-    if len(text_clean) < 25:
-        return False, "Tweet text too short (< 25 chars)"
+    photo_urls = get_tweet_photo_urls(tweet)
+    ext_urls = getattr(tweet, "urls", None)
+    if isinstance(ext_urls, list) and len(ext_urls) > 0:
+        return False, "Tweet contains external web/promo link"
+
+    min_text_len = 15 if photo_urls else 25
+    if len(text_clean) < min_text_len:
+        return False, f"Tweet text too short (< {min_text_len} chars)"
     if len(text_clean) > 500:
         return False, "Tweet text too long"
 
-    # Check if tweet is mostly a link
+    # Check if tweet is mostly a link (allow native photos with >=15 chars of caption)
     links = re.findall(r"https?://\S+", text_clean)
     text_without_links = re.sub(r"https?://\S+", "", text_clean).strip()
-    if links and len(text_without_links) < 25:
+    if links and len(text_without_links) < min_text_len:
         return False, "Tweet is primarily a link or promo"
 
     # Ensure tweet is predominantly English text
@@ -224,69 +242,90 @@ def is_tweet_eligible(
     return True, "Eligible"
 
 
+def calculate_tweet_velocity(tweet, now_utc: Optional[datetime.datetime] = None) -> Tuple[int, float]:
+    """Return (favorite_count, likes_per_hour) to measure real-time algorithmic momentum."""
+    if now_utc is None:
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+    raw_fav = getattr(tweet, "favorite_count", 0)
+    fav_count = int(raw_fav) if isinstance(raw_fav, (int, float)) else 0
+    created_dt = get_tweet_created_at(tweet)
+    if not created_dt:
+        return fav_count, float(fav_count)
+    age_hours = max(0.15, (now_utc - created_dt).total_seconds() / 3600.0)
+    return fav_count, round(fav_count / age_hours, 1)
+
+
 def score_candidate_tweet(tweet, now_utc: Optional[datetime.datetime] = None) -> float:
     """
-    Score an eligible candidate tweet (0-100) to prioritize targets most likely
-    to produce genuine author engagement (likes/replies back) and build Tweepcred:
-    1. Recency (up to 40 pts): <30m = 40, <1h = 34, <2h = 26, <4h = 16, else 8
-    2. Follower sweet spot (up to 25 pts): 30-1,500 = 25 (highest reply-back rate), 1,500-5,000 = 18
-    3. Low reply competition (up to 15 pts): 0 replies = 15, 1-2 replies = 10, 3-5 replies = 5
-    4. First-person personal authenticity (up to 20 pts): "i ", "my ", "i'm", struggle/builder markers
+    Score an eligible candidate tweet (0-100) for Rising Wave Surfing:
+    1. Wave Velocity & Likes (up to 40 pts): prioritizes tweets actively gaining likes/hr
+    2. Recency (up to 30 pts): <30m = 30, <1h = 25, <2h = 18, <4h = 10, else 5
+    3. Reply Slot Opportunity (up to 15 pts): high like-to-reply ratio & low reply competition
+    4. First-person personal authenticity (up to 15 pts): "i ", "my ", "i'm", struggle/builder markers
     """
     if now_utc is None:
         now_utc = datetime.datetime.now(datetime.timezone.utc)
 
     score = 0.0
+    fav_count, likes_per_hour = calculate_tweet_velocity(tweet, now_utc=now_utc)
 
-    # 1. Recency score (0-40)
+    # 1. Wave Velocity & Traction Score (0-40)
+    if likes_per_hour >= 25.0 or fav_count >= 15:
+        score += 40.0
+    elif likes_per_hour >= 12.0 or fav_count >= 8:
+        score += 32.0
+    elif likes_per_hour >= 5.0 or fav_count >= 3:
+        score += 24.0
+    elif fav_count >= 1:
+        score += 15.0
+    else:
+        score += 8.0
+
+    # 2. Recency score (0-30)
     created_dt = get_tweet_created_at(tweet)
     if created_dt:
         age_hours = max(0.0, (now_utc - created_dt).total_seconds() / 3600.0)
         if age_hours <= 0.5:
-            score += 40.0
+            score += 30.0
         elif age_hours <= 1.0:
-            score += 34.0
+            score += 25.0
         elif age_hours <= 2.0:
-            score += 26.0
+            score += 18.0
         elif age_hours <= 4.0:
-            score += 16.0
+            score += 10.0
         else:
-            score += 8.0
+            score += 5.0
 
-    # 2. Follower sweet spot (0-25)
-    user = getattr(tweet, "user", None)
-    followers = getattr(user, "followers_count", 0) or 0
-    if 30 <= followers <= 1500:
-        score += 25.0
-    elif 1500 < followers <= 5000:
-        score += 18.0
-    else:
-        score += 10.0
-
-    # 3. Reply competition (0-15)
-    reply_count = getattr(tweet, "reply_count", 0) or 0
+    # 3. Reply Slot Opportunity & Follower Reach (0-15)
+    raw_replies = getattr(tweet, "reply_count", 0)
+    reply_count = int(raw_replies) if isinstance(raw_replies, (int, float)) else 0
     if reply_count == 0:
-        score += 15.0
-    elif reply_count <= 2:
+        score += 12.0
+    elif reply_count <= 3:
         score += 10.0
+    elif reply_count <= 8:
+        score += 6.0
     else:
-        score += 5.0
+        score += 2.0
 
-    # 4. Personal authenticity & conversational hooks (0-20)
+    user = getattr(tweet, "user", None)
+    raw_flw = getattr(user, "followers_count", 0)
+    followers = int(raw_flw) if isinstance(raw_flw, (int, float)) else 0
+    if 100 <= followers <= 25000:
+        score += 3.0
+
+    # 4. Personal authenticity & conversational hooks (0-15)
     text = (getattr(tweet, "text", "") or getattr(tweet, "full_text", "") or "").lower()
     if any(fp in f" {text} " for fp in (" i ", " i'm ", " im ", " my ", " me ", " ive ", " i've ")):
-        score += 12.0
+        score += 9.0
     if any(kw in text for kw in ("instead of", "supposed to", "procrastinat", "lock in", "shipping", "coding", "studying", "exam", "essay", "app", "project")):
+        score += 6.0
+
+    # 5. Visual Stopping Power Bonus (+8 pts if native photo attached — Quote-Tweets of images perform 3x-5x better)
+    if get_tweet_photo_urls(tweet):
         score += 8.0
 
-    # 5. Early Velocity Bonus (up to +10 pts): tweets <90m old that already have 1-25 likes
-    # are actively being pushed by X's Heavy Ranker into "For You" feeds.
-    raw_fav = getattr(tweet, "favorite_count", 0)
-    fav_count = int(raw_fav) if isinstance(raw_fav, (int, float)) else 0
-    if created_dt and ((now_utc - created_dt).total_seconds() / 3600.0) <= 1.5 and 1 <= fav_count <= 25:
-        score = min(100.0, score + 8.0)
-
-    return round(score, 1)
+    return round(min(100.0, score), 1)
 
 
 async def process_inbound_thread_comments(
@@ -417,18 +456,23 @@ async def search_engagement_candidates(
     effective_max_age = max_age_hours if max_age_hours is not None else twitter_config.engagement_max_age_hours
     now_utc = datetime.datetime.now(datetime.timezone.utc)
 
-    # Try up to 2 Boolean cluster queries (stops after the 1st query if eligible tweets are found)
-    queries_to_try = [query_override] if query_override else random.sample(NICHE_QUERIES, min(2, len(NICHE_QUERIES)))
+    # Rising Wave 2-Tier Cascade:
+    # Tier 1: High-velocity surge (`min_faves:8`)
+    # Tier 2: Moderate rising wave fallback (`min_faves:3`) if Tier 1 had 0 fresh matches
+    base_queries = [query_override] if query_override else random.sample(NICHE_QUERIES, min(2, len(NICHE_QUERIES)))
+    min_faves_tiers = [8, 3]
     candidates = []
     seen_ids = set()
 
-    for q_idx, raw_query in enumerate(queries_to_try):
+    for q_idx, raw_query in enumerate(base_queries):
         if not raw_query:
             continue
-        # Note: -filter:links strips external promo links at X's search index level;
-        # we avoid -filter:replies in raw query syntax because X GraphQL search often drops valid posts when combined with OR clusters.
-        search_query = f"{raw_query} -filter:retweets -filter:links lang:en"
-        print(f"\n[Engagement Search] Query [{q_idx+1}/{len(queries_to_try)}]: {search_query}")
+        tier_faves = min_faves_tiers[min(q_idx, len(min_faves_tiers) - 1)]
+        faves_filter = f"min_faves:{tier_faves} " if (not query_override and "min_faves" not in raw_query) else ""
+        # Do not pass -filter:links here so X includes native photo tweets (desk setups, late-night study pics, coding screens);
+        # external promo web links are filtered out directly in is_tweet_eligible via tweet.urls.
+        search_query = f"{raw_query} {faves_filter}-filter:retweets lang:en"
+        print(f"\n🌊 [Rising Wave Search] Tier {q_idx+1} (min_faves:{tier_faves}): {search_query}")
 
         try:
             results = await twikit_client.search_tweet(search_query, product="Latest", count=20)
@@ -453,13 +497,11 @@ async def search_engagement_candidates(
                     if eligible:
                         batch_candidates.append(tweet)
                     else:
-                        # Group skip reasons for clean diagnostic output
                         short_reason = reason.split("(")[0].split(":")[0].strip()
                         skip_reasons[short_reason] = skip_reasons.get(short_reason, 0) + 1
 
-                # Adaptive Age Fallback: if X returned tweets on this query, none met effective_max_age,
-                # and max_age_hours wasn't explicitly forced, relax age window up to 8.0h on the ALREADY fetched batch
-                # so we don't waste an extra search API call!
+                # Adaptive Age Fallback: if X returned rising tweets on this query, none met effective_max_age,
+                # relax age window up to 8.0h on the ALREADY fetched batch
                 if not batch_candidates and max_age_hours is None and effective_max_age < 8.0:
                     relaxed_age = 8.0
                     for tweet in raw_batch:
@@ -471,11 +513,13 @@ async def search_engagement_candidates(
                         if eligible_rel:
                             batch_candidates.append(tweet)
                     if batch_candidates:
-                        print(f"  ℹ Relaxed age window to {relaxed_age:.1f}h on fetched batch ({len(batch_candidates)} found).")
+                        print(f"  ℹ Relaxed age window to {relaxed_age:.1f}h on fetched rising batch ({len(batch_candidates)} found).")
 
                 for tweet in batch_candidates:
                     screen_name = getattr(getattr(tweet, "user", None), "screen_name", "unknown")
                     followers = getattr(getattr(tweet, "user", None), "followers_count", 0) or 0
+                    reply_cnt = getattr(tweet, "reply_count", 0) or 0
+                    fav_cnt, vel_lph = calculate_tweet_velocity(tweet, now_utc=now_utc)
                     created_dt = get_tweet_created_at(tweet)
                     if created_dt:
                         age_h = max(0.0, (now_utc - created_dt).total_seconds() / 3600.0)
@@ -483,7 +527,11 @@ async def search_engagement_candidates(
                     else:
                         age_str = "recent"
                     cand_score = score_candidate_tweet(tweet, now_utc=now_utc)
-                    print(f"  ✓ Candidate: @{screen_name} ({age_str} | {followers} flw | Score: {cand_score}/100)")
+                    photo_tag = " | 🖼 [Photo]" if get_tweet_photo_urls(tweet) else ""
+                    print(
+                        f"  🌊 Wave Candidate: @{screen_name} ({age_str} | {fav_cnt} likes [{vel_lph}/hr] | "
+                        f"{reply_cnt} replies | {followers} flw{photo_tag} | Score: {cand_score}/100)"
+                    )
                     candidates.append(tweet)
 
                 if skip_reasons:
@@ -491,16 +539,16 @@ async def search_engagement_candidates(
                     print(f"  [Filter Telemetry] Checked {len(raw_batch)} tweets -> {len(batch_candidates)} eligible | Skipped: {summary_str}")
 
         except Exception as e:
-            print(f"[Engagement Search] Error searching query '{raw_query}': {e}")
+            print(f"[Rising Wave Search] Error searching query '{raw_query}': {e}")
 
-        # Stop immediately after the first query if we found at least 1 candidate (no multi-query burst)
+        # Stop immediately after Tier 1 if we found at least 1 rising wave candidate
         if candidates:
             break
 
-        # Only pause if we need to try the fallback query
-        if q_idx < len(queries_to_try) - 1:
+        # Only pause if we need to step down to Tier 2 (min_faves:3)
+        if q_idx < len(base_queries) - 1:
             pause_sec = random.uniform(4.0, 7.5)
-            print(f"  -> 0 eligible candidates on first query; pausing {pause_sec:.1f}s before fallback cluster...")
+            print(f"  -> 0 candidates at min_faves:{tier_faves}; pausing {pause_sec:.1f}s before stepping down to Tier 2...")
             await asyncio.sleep(pause_sec)
 
     # Sort discovered candidates by composite quality score descending (tie-broken by newest timestamp)
@@ -578,7 +626,7 @@ async def run_engagement_cycle(
     # STAGE 2: Search & score outbound candidates
     candidates = await search_engagement_candidates(
         twikit_client,
-        max_candidates=effective_count + 3,
+        max_candidates=max(effective_count + 5, 6),
         query_override=query_override,
         max_age_hours=effective_max_age
     )
@@ -604,33 +652,38 @@ async def run_engagement_cycle(
         screen_name = getattr(user, "screen_name", "user")
         name = getattr(user, "name", "")
         followers = getattr(user, "followers_count", 0)
-        raw_fav = getattr(tweet, "favorite_count", 0)
-        fav_count = int(raw_fav) if isinstance(raw_fav, (int, float)) else 0
+        fav_count, vel_lph = calculate_tweet_velocity(tweet)
+        reply_cnt = getattr(tweet, "reply_count", 0) or 0
         tweet_text = getattr(tweet, "text", "") or getattr(tweet, "full_text", "")
         tweet_id = str(getattr(tweet, "id", ""))
         cand_score = score_candidate_tweet(tweet)
+        photo_urls = get_tweet_photo_urls(tweet)
 
         # Decide action type: 'quote' vs 'reply'
-        # In 'auto' mode, if a tweet already has strong traction (fav_count >= 5) and good length,
-        # we can Quote-Tweet it as a "Field Note" for main-feed reach & 0% reply-ban risk.
+        # Quote-Tweets of images (desk setups, study sessions, coding screens) strike gold on the timeline,
+        # so in 'auto' mode we automatically Quote-Tweet any candidate with an attached photo (or every 3rd turn).
+        should_rotate_qt = (len(recent_replies_cache) % 3 == 2)
         use_quote_tweet = (
             clean_mode == "quote"
-            or (clean_mode == "auto" and fav_count >= 5 and len(tweet_text.strip()) >= 55)
+            or (clean_mode == "auto" and (should_rotate_qt or bool(photo_urls)))
         )
-        action_label = "QUOTE TWEET (Field Note)" if use_quote_tweet else "STEALTH PEER REPLY"
+        action_label = "QUOTE TWEET (Field Note)" if use_quote_tweet else "WAVE-SURFING PEER REPLY"
 
         print(f"--- CANDIDATE [{idx+1}] ({action_label} | Score: {cand_score}/100) ---")
-        print(f"Author:    @{screen_name} ({name}) | Followers: {followers} | Likes: {fav_count}")
-        print(f"Tweet ID:  {tweet_id}")
+        print(f"Author:    @{screen_name} ({name}) | Followers: {followers}")
+        print(f"Velocity:  {fav_count} likes ({vel_lph}/hr) | {reply_cnt} existing replies | ID: {tweet_id}")
+        if photo_urls:
+            print(f"Media:     🖼 {len(photo_urls)} Photo(s) attached ({photo_urls[0]})")
         print(f"Content:   \"{tweet_text.strip()}\"")
 
         # Generate contextual text via Groq
         if use_quote_tweet:
-            print("\nGenerating deadpan Quote-Tweet Field Note via Groq...")
+            print("\nGenerating Double-Take Quote-Tweet via Groq...")
             reply_text = generate_quote_tweet_commentary(
                 tweet_text,
                 author_name=name or screen_name,
-                recent_replies=recent_replies_cache
+                recent_replies=recent_replies_cache,
+                media_urls=photo_urls
             )
         else:
             print("\nGenerating organic peer reply via Groq...")
