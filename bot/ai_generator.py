@@ -558,7 +558,9 @@ BANNED_REPLY_CLICHES = [
     "heavy mental load", "take a deep breath", "it's okay to not be okay",
     "mental static", "prescription for", "nourish the soul", "doormat",
     "crush it", "delve", "insane work bro", "put the phone in another room",
-    "toss the phone", "canonical builder experience", "rise and grind"
+    "toss the phone", "canonical builder experience", "rise and grind",
+    "schadenfreude", "smugly", "rite of passage", "masterclass", "humbles a",
+    "what are you building anyway", "classic trap", "foreign language"
 ]
 
 
@@ -650,51 +652,44 @@ def generate_human_reply(
         "Content-Type": "application/json"
     }
 
-    # Rotate subtle conversational angles so replies don't follow a single formula
-    reply_angles = [
-        "dry commiseration + a specific observation about what they mentioned",
-        "witty deadpan observation + a quick, casual question about what they're working on",
-        "relatable builder/student confession showing you've done the exact same thing",
-        "lighthearted reality check without sounding bossy or lecturing"
-    ]
-    chosen_angle = random.choice(reply_angles)
-
     system_prompt = (
-        "You are a sharp, self-aware 20-something builder/student replying to a peer on X/Twitter.\n"
-        "Your goal is to write a genuine, dry, conversational comment that makes the author smile, like, or reply back.\n\n"
+        "You are a supportive, funny, relatable 20-something friend on X.\n"
+        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time (like a friend in the library who makes you laugh about procrastinating and then hypes you up to knock out 15 minutes of work).\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is NOT a genuine personal post about studying, working, coding, building a project, procrastinating, or trying to focus "
-        "(for example, if it's about sports, video games, politics, fan cams, music stanning, selling something, or tragedy), output the exact single word: SKIP\n\n"
-        "STEP 2 — ANTI-GHOST-BAN & VOICE RULES:\n"
-        "- Sound like a normal person typing a quick reply, NOT a motivational coach or a bot lecturing a stranger.\n"
-        "- DO NOT bark unsolicited commands ('close the tab bro', 'put the phone in another room', 'set a timer'). Strangers mute accounts that boss them around.\n"
-        "- DO NOT overuse repetitive TikTok slang ('cooked', 'insane work bro', 'lock in', 'canonical'). Speak naturally.\n"
-        "- Reference a SPECIFIC detail from their tweet so it is unmistakably written just for them.\n"
-        "- Keep it to 1 short sentence (or 2 very short clauses), strictly between 35 and 140 characters.\n"
-        "- Casual lowercase or normal sentence case is fine, just keep it effortless.\n"
-        "- Output ONLY the reply text (or SKIP). NO quotes, NO hashtags, NO links, NO @mentions, NO robotic emojis (🚀, 🤖, 🧵).\n\n"
-        "EXAMPLES OF HIGH-ENGAGEMENT HUMAN REPLIES:\n"
+        "If the tweet is NOT a personal post about studying, working, coding, building a project, procrastinating, or trying to focus "
+        "(for example, if it's about sports, video games, politics, fan cams, celebrity drama, selling something, or tragedy), output the exact single word: SKIP\n\n"
+        "STEP 2 — THE 2-PART FORMULA (HUMOR + MOTIVATION):\n"
+        "Write 1 to 2 short, natural sentences (45 to 145 characters total):\n"
+        "  1. The Funny Observation: React with light, everyday humor to the exact thing that happened in their tweet.\n"
+        "  2. The Grounded Motivational Push: Give them a warm, bite-sized nudge that makes starting feel easy right now (e.g. 'knock out just 15 minutes', 'write one messy page', 'ship the ugly version first, you got this').\n\n"
+        "CRITICAL VOICE RULES:\n"
+        "- Use simple, everyday conversational English. NEVER use pretentious SAT/thesaurus words ('schadenfreude', 'smugly', 'canonical', 'poetic', 'rite of passage', 'masterclass', 'peak').\n"
+        "- STAY 100% ON THEIR EXACT TOPIC: Never ask 'what are you building?' unless their tweet explicitly mentions coding or building an app.\n"
+        "- Output ONLY the reply text (or SKIP). NO quotes, NO hashtags, NO links, NO @mentions, NO emojis.\n\n"
+        "GOLD-STANDARD EXAMPLES (HUMOROUS + MOTIVATIONAL):\n"
+        "- Tweet: 'dropped my phone on my nose this is what I get for not studying and doomscrolling instead'\n"
+        "  Reply: 'even gravity is telling you it\\'s time to start. knock out just 15 minutes of notes and call it a win, you got this'\n"
         "- Tweet: 'procrastinating by organizing my spotify playlist instead of studying for this midterm'\n"
-        "  Reply: 'spending 40 minutes curating the soundtrack for a study session that hasn\\'t started yet is a classic trap'\n"
-        "- Tweet: 'spent 4 hours fighting css padding instead of launching'\n"
-        "  Reply: 'nothing humbles a developer faster than a div refusing to center when you\\'re trying to ship. what are you building?'\n"
+        "  Reply: 'the soundtrack is officially ready. press play and just get through one chapter tonight, future you will be hyped'\n"
         "- Tweet: 'why do i always deep clean my room the night before a huge deadline'\n"
-        "  Reply: 'my apartment is only ever spotless when i have something terrifying due the next morning'\n"
-        "- Tweet: 'trying to lock in on this landing page copy but my brain is fried'\n"
-        "  Reply: 'writing landing page copy after 4pm feels like reading a foreign language. ugly first draft always wins'"
+        "  Reply: 'nothing makes a room cleaner than a terrifying deadline. ride that momentum into just 20 minutes on the actual draft'\n"
+        "- Tweet: 'spent 4 hours fighting css padding instead of finishing the feature'\n"
+        "  Reply: 'css has humbled every developer alive. ship the messy version first and fix the pixels later, you\\'re closer than you think'"
     )
 
     clean_tweet = tweet_text.strip()
     user_prompt = (
-        f"Tweet from {author_name or 'someone'}:\n\"{clean_tweet}\"\n"
+        f"Tweet:\n\"{clean_tweet}\"\n"
         f"{avoid_replies_block}\n"
-        f"Angle to use: {chosen_angle}.\n"
-        f"Write 1 natural, specific peer reply (35-140 chars), or output SKIP if off-topic:"
+        f"Write a humorous yet genuinely motivating 1-2 sentence reply reacting directly to this tweet (45-145 chars), or output SKIP if off-topic:"
     )
 
-    candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
+    primary_model = ai_config.groq_model or "openai/gpt-oss-120b"
+    candidate_models = [primary_model, "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    seen_models = set()
+    models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
 
-    for model in candidate_models:
+    for model in models_to_try:
         for attempt in range(retries):
             payload = {
                 "model": model,
@@ -702,8 +697,8 @@ def generate_human_reply(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.88,
-                "max_tokens": 90
+                "temperature": 0.68,
+                "max_tokens": 80
             }
 
             try:
@@ -785,29 +780,32 @@ def generate_quote_tweet_commentary(
     }
 
     system_prompt = (
-        "You run 'The Procrastination Archive' on X — an observational account documenting absurdly specific ways builders and students avoid their real work.\n"
-        "You are Quote-Tweeting someone's relatable post about procrastinating, coding struggles, or studying.\n\n"
+        "You run 'The Procrastination Archive' on X — a humorous and motivating account about how students and builders avoid their work.\n"
+        "You are Quote-Tweeting someone's post about procrastinating, coding struggles, or studying.\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
         "If the tweet is NOT a genuine personal post about procrastinating, studying, coding, building, or avoiding work, output the exact single word: SKIP\n\n"
-        "STEP 2 — QUOTE-TWEET VOICE RULES:\n"
-        "- Write a witty, deadpan 1-sentence observation that validates their struggle and makes both their followers and yours laugh.\n"
-        "- Reference the specific thing they mentioned (e.g., CSS, Notion, playlists, cleaning, midterms).\n"
-        "- Strictly between 40 and 140 characters. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
+        "STEP 2 — QUOTE-TWEET FORMULA (HUMOR + MOTIVATION):\n"
+        "- Write 1-2 short sentences in plain everyday English: first a funny, relatable observation about their specific procrastination, followed by a grounded, encouraging push to start small.\n"
+        "- Never use big thesaurus words ('schadenfreude', 'rite of passage', 'canonical').\n"
+        "- Strictly between 45 and 145 characters. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
         "EXAMPLES:\n"
         "- Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
-        "  Quote: 'Nothing makes an apartment cleaner than a terrifying deadline due at 9am.'\n"
-        "- Tweet: 'spent 3 hours tweaking my neovim config instead of building the feature'\n"
-        "  Quote: 'Tweaking your editor config for 3 hours to save 4 seconds of typing is a rite of passage.'"
+        "  Quote: 'Nothing makes an apartment cleaner than a 5-page paper due tomorrow. Kitchen is spotless, now just get the ugly first paragraph down.'\n"
+        "- Tweet: 'spent 3 hours tweaking my editor theme instead of writing the code'\n"
+        "  Quote: 'Three hours picking a font to avoid ten minutes of coding happens to all of us. Write one messy function and let momentum take over.'"
     )
 
     user_prompt = (
-        f"Tweet from {author_name or 'someone'}:\n\"{tweet_text.strip()}\"\n\n"
-        f"Write a deadpan 1-sentence Quote-Tweet observation (40-140 chars), or output SKIP:"
+        f"Tweet:\n\"{tweet_text.strip()}\"\n\n"
+        f"Write a humorous yet motivating Quote-Tweet (45-145 chars), or output SKIP:"
     )
 
-    candidate_models = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "groq/compound-mini"]
+    primary_model = ai_config.groq_model or "openai/gpt-oss-120b"
+    candidate_models = [primary_model, "openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    seen_models = set()
+    models_to_try = [m for m in candidate_models if not (m in seen_models or seen_models.add(m))]
 
-    for model in candidate_models:
+    for model in models_to_try:
         for _ in range(retries):
             try:
                 response = requests.post(
@@ -819,7 +817,7 @@ def generate_quote_tweet_commentary(
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        "temperature": 0.85,
+                        "temperature": 0.68,
                         "max_tokens": 80
                     },
                     timeout=15
