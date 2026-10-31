@@ -371,7 +371,7 @@ def generate_quote_with_groq(
     if primary == "openai/gpt-oss-20b":
         primary = "openai/gpt-oss-120b"
 
-    candidate_models = [primary, "openai/gpt-oss-120b", "qwen/qwen3.8-27b", "groq/compound-mini"]
+    candidate_models = [primary, "openai/gpt-oss-120b", "openai/gpt-oss-20b", "groq/compound-mini"]
     seen = set()
     models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
@@ -386,6 +386,8 @@ def generate_quote_with_groq(
                 "response_format": {"type": "json_object"},
                 "temperature": 0.85
             }
+            if model.startswith("openai/gpt-oss"):
+                payload["reasoning_effort"] = "low"
 
             try:
                 response = requests.post(
