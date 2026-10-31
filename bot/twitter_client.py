@@ -326,7 +326,8 @@ class TwitterClient:
         dry_run: bool = False,
         query_override: Optional[str] = None,
         max_age_hours: Optional[float] = None,
-        mode: str = "auto"
+        mode: str = "auto",
+        force: bool = False
     ) -> Dict[str, Any]:
         """
         Execute cohesive growth loop:
@@ -345,7 +346,8 @@ class TwitterClient:
                     dry_run=dry_run,
                     query_override=query_override,
                     max_age_hours=max_age_hours,
-                    mode=mode
+                    mode=mode,
+                    force=force
                 )
             finally:
                 await self._close_twikit_http()

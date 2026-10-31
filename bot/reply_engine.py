@@ -568,7 +568,8 @@ async def run_engagement_cycle(
     query_override: Optional[str] = None,
     max_age_hours: Optional[float] = None,
     tweepy_client: Optional[Any] = None,
-    mode: str = "auto"
+    mode: str = "auto",
+    force: bool = False
 ) -> Dict[str, Any]:
     """
     Execute the Cohesive Growth Loop:
@@ -607,8 +608,8 @@ async def run_engagement_cycle(
     if inbound_action:
         engagements.append(inbound_action)
 
-    # STAGE 0: Database Velocity Guardrail before outbound outreach (Live Mode Only)
-    if not dry_run:
+    # STAGE 0: Database Velocity Guardrail before outbound outreach (Live Mode Only, unless force=True)
+    if not dry_run and not force:
         velocity = db_manager.get_reply_velocity_status(
             max_daily=twitter_config.engagement_max_daily_replies,
             min_cooldown_hours=twitter_config.engagement_min_cooldown_hours

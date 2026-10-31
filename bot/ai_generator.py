@@ -65,16 +65,15 @@ def _init_fallback_catalog() -> List[Dict[str, Any]]:
         {
             "id": "sq_cleaning_1",
             "tweet_1": (
-                "Just spent 35 minutes completely reorganizing my kitchen spice rack alphabetically to avoid writing one proposal.\n\n"
-                "The paprika is in alphabetical order. The client is still waiting.\n\n"
-                "Step away from the seasonings. Open the document. Finish the draft."
+                "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.\n\n"
+                "The paprika is in order, but the proposal is still blank.\n\n"
+                "We clean when we are afraid of a bad first draft—once you accept the first page can be messy, the dread disappears."
             ),
             "tweet_2": (
-                "The sudden urge to reorganize your kitchen is just anxiety wearing an apron. "
-                "Do the scary 5-minute task first."
+                "The sudden urge to reorganize your kitchen is just perfectionism wearing an apron."
             ),
-            "hook": "Just spent 35 minutes completely reorganizing my kitchen spice rack alphabetically to avoid writing one proposal.",
-            "quote": "Just spent 35 minutes completely reorganizing my kitchen spice rack alphabetically to avoid writing one proposal.",
+            "hook": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.",
+            "quote": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.",
             "author": "Field Notes",
             "category": "FAKE CHORES",
             "theme": "Aesthetic Organization",
@@ -142,25 +141,22 @@ def validate_character_limits(entry: Dict[str, Any]) -> bool:
         print("[Validation Warning] Tweet 1 missing standard punctuation. Rejecting unpunctuated AI run-on.")
         return False
 
-    # Ban forced slang / AI glitches
-    banned_phrases = ["close the mop", "stop the shine", "wait for your sparkle", "shine on", "lock in for your"]
+    # Ban forced slang / AI glitches and robotic "Close the X. Open the Y." command endings
+    banned_phrases = [
+        "close the mop", "stop the shine", "wait for your sparkle", "shine on", "lock in for your",
+        "close the doc", "close the tab", "close the planner", "open the document", "open the file",
+        "put down the", "step away from the", "pause the playlist"
+    ]
     t1_lower = t1.lower()
     for bp in banned_phrases:
         if bp in t1_lower:
-            print(f"[Validation Warning] Tweet 1 contains cringe forced slang: '{bp}'. Rejecting.")
+            print(f"[Validation Warning] Tweet 1 contains banned AI template phrase: '{bp}'. Rejecting.")
             return False
 
-    # Check for motivational call-to-action / punchy kick in the last paragraph
-    action_keywords = [
-        "close", "open", "put down", "sit down", "write", "send",
-        "finish", "start", "stop", "do the", "pick", "delete", "step away",
-        "clean", "execute", "hit send", "pause", "get back", "turn off", "shut down",
-        "draft", "ship", "toss", "leave", "drop", "face the", "get it done", "knock out"
-    ]
-    last_para = paras[-1].lower()
-    has_action = any(kw in last_para for kw in action_keywords)
-    if not has_action:
-        print(f"[Validation Warning] Final paragraph lacks motivational action kick: '{paras[-1]}'")
+    # Ensure the final paragraph is a substantive motivational insight (not a 3-word robotic command)
+    last_para = paras[-1].strip()
+    if len(last_para) < 25:
+        print(f"[Validation Warning] Final paragraph is too brief/robotic ('{last_para}'). Rejecting.")
         return False
 
     return True
@@ -315,56 +311,46 @@ def generate_quote_with_groq(
         "You are a witty, observational writer (think Jerry Seinfeld, Tim Urban, or David Sedaris) writing relatable, honest tweets about modern procrastination.\n\n"
         "CORE VOICE RULES — WRITE LIKE A REAL HUMAN:\n"
         "- Write naturally in clean, standard English. Use normal sentence structure, capitalization, and punctuation (periods, commas).\n"
+        "- NEVER USE ROBOTIC AI COMMAND ENDINGS: Strictly forbid staccato imperative endings like 'Close the X. Open the Y. Finish the Z.' or 'Put down the X. Start the Y.' Real humans do not talk like that.\n"
         "- NO FORCED SLANG: Never use cringe internet buzzwords ('sparkle', 'close the mop', 'stop the shine', 'diabolical', 'cooked', 'slay').\n"
-        "- NO RHYMING OR SLAM POETRY: Do NOT string together rhyming lists of commands. Talk like a normal person making a dry, deadpan observation.\n"
         "- NO NUMBERED LISTS, BULLET POINTS, OR QUOTATION MARKS.\n\n"
-        "STRUCTURE OF TWEET 1 (Must be 3 short, distinct paragraphs):\n"
-        "Paragraph 1 (The Setup): A specific, funny, deadpan description of an avoidance behavior you caught yourself doing (e.g. cleaning, researching gear, tweaking playlists, organizing Notion).\n"
-        "Paragraph 2 (The Reality Check): A short, dry 1-sentence truth showing why it didn't solve anything (e.g. 'The paprika is in alphabetical order. The client is still waiting.').\n"
-        "Paragraph 3 (The Motivation): A grounded, practical call to action (e.g. 'Step away from the seasonings. Open the document. Finish the draft.').\n\n"
-        "TWEET 2 (Thread Reply & Engagement Hook): 1 calm, natural sentence delivering an insight on why we avoid uncomfortable work, followed by a casual 1-sentence question asking readers what 'side quest' they are using to procrastinate today.\n\n"
-        "GOLD-STANDARD HUMAN EXAMPLES:\n\n"
+        "STRUCTURE OF TWEET 1 (Must be 3 short, distinct paragraphs, strictly under 265 chars total):\n"
+        "Paragraph 1 (The Setup): A specific, funny description of an avoidance behavior you caught yourself doing.\n"
+        "Paragraph 2 (The Reality Check): A short, dry 1-sentence truth showing why that side quest didn't solve the real problem.\n"
+        "Paragraph 3 (Unique Contextual Motivation): A natural, insightful sentence that speaks directly to the psychology of THAT specific situation and makes the reader genuinely want to tackle the real thing—without using cookie-cutter 'Close the X. Open the Y.' commands.\n\n"
+        "TWEET 2 (Thread Reply & Engagement Hook): 1 calm, natural sentence delivering a deeper insight on why we avoid that specific kind of discomfort, followed by a casual question.\n\n"
+        "GOLD-STANDARD HUMAN EXAMPLES (Notice how every ending is completely unique to the context):\n\n"
         "Example 1:\n"
         "{\n"
-        '  "tweet_1": "Just spent 35 minutes completely reorganizing my kitchen spice rack alphabetically to avoid writing one proposal.\\n\\nThe paprika is in alphabetical order. The client is still waiting.\\n\\nStep away from the seasonings. Open the document. Finish the draft.",\n'
-        '  "tweet_2": "The sudden urge to reorganize your kitchen is just anxiety wearing an apron. Do the scary 5-minute task first.",\n'
+        '  "tweet_1": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.\\n\\nThe paprika is in order, but the proposal is still blank.\\n\\nWe clean when we are afraid of a bad first draft—once you accept the first page can be messy, the dread disappears.",\n'
+        '  "tweet_2": "The sudden urge to deep-clean is just perfectionism wearing an apron.",\n'
         '  "category": "FAKE CHORES",\n'
-        '  "hook": "Just spent 35 minutes completely reorganizing my kitchen spice rack alphabetically to avoid writing one proposal."\n'
+        '  "hook": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal."\n'
         "}\n\n"
         "Example 2:\n"
         "{\n"
-        '  "tweet_1": "Spent 40 minutes building the \\"ultimate focus playlist\\" on Spotify for a task that took 8 minutes.\\n\\nYou do not need a movie soundtrack to reply to three emails.\\n\\nPause the playlist. Open your inbox. Get it done.",\n'
-        '  "tweet_2": "Waiting for the perfect mood or environment is the easiest way to lose an entire afternoon. Just start ugly.",\n'
+        '  "tweet_1": "Spent 40 minutes curating a focus playlist on Spotify for a task that only takes 10 minutes.\\n\\nYou do not need a movie soundtrack to reply to three emails.\\n\\nWaiting until you feel in the mood is a trap; momentum only shows up after you start, never before.",\n'
+        '  "tweet_2": "Trying to engineer the perfect vibe is the easiest way to lose an entire afternoon.",\n'
         '  "category": "SPOTIFY TRAP",\n'
-        '  "hook": "Spent 40 minutes building the ultimate focus playlist on Spotify for a task that took 8 minutes."\n'
+        '  "hook": "Spent 40 minutes curating a focus playlist on Spotify for a task that only takes 10 minutes."\n'
         "}\n\n"
         "Example 3:\n"
         "{\n"
-        '  "tweet_1": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow.\\n\\nA quieter spacebar will not write your financial summary.\\n\\nUse the laptop keyboard you already have. Open the file. Get the first draft done.",\n'
-        '  "tweet_2": "Researching gear gives you the feeling of progress without any of the work. Build with what you have.",\n'
+        '  "tweet_1": "Spent an hour reading reviews on mechanical keyboards instead of working on the report due tomorrow.\\n\\nA quieter spacebar will not write your summary for you.\\n\\nResearching better tools feels safe because you cannot fail at shopping, but real progress only happens when you risk a rough attempt.",\n'
+        '  "tweet_2": "Buying gear gives you the dopamine of progress without any of the vulnerability of actual work.",\n'
         '  "category": "GEAR TRAP",\n'
-        '  "hook": "Spent an hour reading reviews on mechanical keyboard switches instead of working on the report due tomorrow."\n'
+        '  "hook": "Spent an hour reading reviews on mechanical keyboards instead of working on the report due tomorrow."\n'
         "}\n\n"
-        "Example 4:\n"
-        "{\n"
-        '  "tweet_1": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today.\\n\\nAn aesthetic calendar does not do the work for you.\\n\\nClose the planner. Pick the single hardest task on your list. Start it now.",\n'
-        '  "tweet_2": "Over-planning is just comfortable hiding. The only plan that matters is what you execute in the next 30 minutes.",\n'
-        '  "category": "PLANNING TRAP",\n'
-        '  "hook": "Spent 3 hours color-coding a Notion dashboard for next week to avoid doing anything today."\n'
-        "}\n\n"
-        "Length limits: \"tweet_1\" strictly under 270 chars (3 paragraphs). \"tweet_2\" strictly under 240 chars.\n"
+        "Length limits: \"tweet_1\" strictly under 265 chars (3 paragraphs). \"tweet_2\" strictly under 240 chars.\n"
         "Return a JSON object with keys: \"tweet_1\", \"tweet_2\", \"category\", \"hook\", \"quote\" (duplicate of hook), \"author\" ('Field Notes')."
     )
 
     user_prompt = (
-        f"Write an authentic, deadpan, and naturally MOTIVATING tweet pair about: '{theme_name}' ({theme_desc}).\n\n"
+        f"Write an authentic, witty, and genuinely MOTIVATING tweet pair about: '{theme_name}' ({theme_desc}).\n\n"
         f"{avoid_block}"
-        f"Remember: Write like a real person, NOT an AI trying to sound cool. Use proper punctuation (periods and commas).\n"
-        f"Paragraph 1: The absurd avoidance behavior.\n"
-        f"Paragraph 2: The deadpan reality check.\n"
-        f"Paragraph 3: The grounded call to action (e.g. 'Put down the sponge. Open the document. Finish the draft.').\n\n"
-        f"tweet_2: A thoughtful, conversational observation with normal punctuation.\n"
-        f"Strictly under 270 chars for tweet_1 and under 240 chars for tweet_2. Respond ONLY in valid JSON."
+        f"CRITICAL: Do NOT end with robotic commands like 'Close the X. Open the Y. Send the Z.' "
+        f"Make the 3rd paragraph a unique, human motivational realization tailored specifically to '{theme_name}'.\n"
+        f"Strictly under 265 chars for tweet_1 and under 240 chars for tweet_2. Respond ONLY in valid JSON."
     )
 
     primary = ai_config.groq_model
@@ -565,7 +551,10 @@ BANNED_REPLY_CLICHES = [
     "schadenfreude", "smugly", "rite of passage", "masterclass", "humbles a",
     "what are you building anyway", "classic trap", "foreign language",
     "origin story", "mysterious mentor", "lurking in the shadows",
-    "movie villain", "training arc", "isaac newton"
+    "movie villain", "training arc", "isaac newton",
+    "close the doc", "close the tab", "close the app", "open the doc",
+    "open the file", "put down the", "step away from", "ugly first draft",
+    "terrible paragraph", "messy function", "knock out one page", "call it a win"
 ]
 
 
@@ -659,34 +648,33 @@ def generate_human_reply(
 
     system_prompt = (
         "You are a supportive, funny, relatable 20-something friend on X.\n"
-        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time (like a friend in the library who makes you laugh about procrastinating or burnout and then hypes you up to knock out 15 minutes of work).\n\n"
+        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time—tailored 100% to the exact situation in their tweet.\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
         "If the tweet is a personal post about studying, working, coding, building a project, procrastinating, burnout, creative block, deadlines, or trying to focus, it PASSED — write the reply!\n"
         "ONLY output the exact single word SKIP if the tweet is completely unrelated (e.g., sports, politics, fan cams, celebrity drama, selling something, or getting fired by HR).\n\n"
-        "STEP 2 — THE 2-PART FORMULA (HUMOR + MOTIVATION):\n"
-        "Write 1 to 2 short, natural sentences (45 to 160 characters total):\n"
-        "  1. The Funny Observation: React with light, everyday humor to the exact thing that happened in their tweet.\n"
-        "  2. The Grounded Motivational Push: Give them a warm, bite-sized nudge that makes starting (or resting after a grind) feel easy right now (e.g. 'knock out just 15 minutes', 'write one messy page', 'ship the ugly version first, you got this').\n\n"
-        "CRITICAL VOICE RULES:\n"
+        "STEP 2 — UNIQUE CONTEXTUAL MOTIVATION (NO AI TEMPLATES):\n"
+        "- Write 1 to 2 natural sentences (45 to 160 characters) that combine light, everyday humor about their specific situation with genuine encouragement.\n"
+        "- NEVER USE ROBOTIC IMPERATIVE ENDINGS: Do NOT end with cookie-cutter commands like 'Close the X, open the Y', 'Write one ugly paragraph', 'Do 15 minutes and call it a win', or 'Knock out one page'. Those sound like an AI template.\n"
+        "- Instead, make the motivation flow naturally from WHY they are stuck or tired (e.g., reminding them the mental dread is always harder than the actual work, taking the perfectionism pressure off, or hyping up how good it'll feel once that specific thing is off their plate).\n"
         "- Use simple, everyday conversational English. NEVER use pretentious SAT/thesaurus words ('schadenfreude', 'smugly', 'canonical', 'poetic', 'rite of passage', 'masterclass', 'peak').\n"
         "- STAY 100% ON THEIR EXACT TOPIC: Never ask 'what are you building?' unless their tweet explicitly mentions coding or building an app.\n"
         "- Output ONLY the reply text (or SKIP). NO quotes, NO hashtags, NO links, NO @mentions, NO emojis.\n\n"
-        "GOLD-STANDARD EXAMPLES (HUMOROUS + MOTIVATIONAL):\n"
+        "GOLD-STANDARD EXAMPLES (Notice how every ending is completely different and fits the exact context):\n"
         "- Tweet: 'dropped my phone on my nose this is what I get for not studying and doomscrolling instead'\n"
-        "  Reply: 'even gravity is telling you it\\'s time to start. knock out just 15 minutes of notes and call it a win, you got this'\n"
+        "  Reply: 'even gravity is intervening on behalf of your GPA at this point. the hardest part is just surviving the first ten minutes of boredom'\n"
         "- Tweet: 'procrastinating by organizing my spotify playlist instead of studying for this midterm'\n"
-        "  Reply: 'the soundtrack is officially ready. press play and just get through one chapter tonight, future you will be hyped'\n"
+        "  Reply: 'curating the vibe always feels mandatory until you realize the exam is tomorrow. at least your study soundtrack is elite for tonight\\'s grind'\n"
         "- Tweet: 'why do i always deep clean my room the night before a huge deadline'\n"
-        "  Reply: 'nothing makes a room cleaner than a terrifying deadline. ride that momentum into just 20 minutes on the actual draft'\n"
+        "  Reply: 'cleaning has a clear finish line and a big deadline feels overwhelming, that\\'s why our brains love the swap. once you get past the blank page it gets way easier'\n"
         "- Tweet: 'spent 4 hours fighting css padding instead of finishing the feature'\n"
-        "  Reply: 'css has humbled every developer alive. ship the messy version first and fix the pixels later, you\\'re closer than you think'"
+        "  Reply: 'fighting layout bugs is the most exhausting part of building because nothing looks like progress on screen, but once that clicks the rest of the feature flies'"
     )
 
     clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
     user_prompt = (
         f"Tweet:\n\"{clean_tweet}\"\n"
         f"{avoid_replies_block}\n"
-        f"Write a humorous yet genuinely motivating 1-2 sentence reply reacting directly to this tweet (45-160 chars), or output SKIP if completely off-topic:"
+        f"Write a humorous, genuinely motivating 1-2 sentence reply tailored to this exact tweet (45-160 chars) WITHOUT using cookie-cutter 'close the X / start the Y' endings, or output SKIP if off-topic:"
     )
 
     # Use models enabled in the Groq project with separate TPM pools (120b -> 20b -> compound-mini)
@@ -807,31 +795,31 @@ def generate_quote_tweet_commentary(
         "STEP 1 — RELEVANCE GATE:\n"
         "If the tweet is a real personal post about procrastinating, studying, homework, coding, building, working, burnout, or deadlines, it PASSED.\n"
         "Output the exact single word SKIP if the tweet is unrelated or fake (e.g., sports, esports interviews, financial/forex trading, fictional 'Lecturer: / Student:' dialogue skits, politics, or selling something).\n\n"
-        "STEP 2 — THE VIRAL QUOTE-TWEET FORMULA (HUMOR + MOTIVATION THAT MAKES 100% SENSE):\n"
-        "Write 1 to 2 short, punchy sentences (45 to 140 characters) in plain, everyday English:\n"
-        "  1. The Funny, Brutally Honest Truth: Call out the exact funny reality or excuse in their tweet in a way everyone immediately understands and laughs at.\n"
-        "  2. The Grounded Push: Give a real, practical 5-to-8 word push to start small right now (e.g., 'knock out one page and survive', 'write the ugly first draft', 'do 15 minutes and call it a win').\n"
+        "STEP 2 — UNIQUE CONTEXTUAL QUOTE-TWEET (HUMOR + MOTIVATION WITHOUT AI TEMPLATES):\n"
+        "- Write 1 to 2 short, punchy sentences (45 to 145 characters) in plain, everyday English.\n"
+        "- Call out the exact funny reality or excuse in their tweet in a way that simultaneously motivates them (by reframing why they are stuck, reminding them that the dread before starting is worse than the work itself, or showing how close they actually are).\n"
+        "- NEVER USE ROBOTIC COMMAND ENDINGS: Strictly forbid ending with cookie-cutter commands like 'Close the X, open the Y', 'Write one ugly paragraph', 'Write the first ugly function', or 'Knock out one page'. Every Quote-Tweet must end in a completely unique way that grows naturally out of their specific tweet.\n"
         f"{image_instruction}"
         "CRITICAL RULES:\n"
         "- MUST MAKE 100% LOGICAL SENSE: Never invent weird metaphors, fictional characters, 'hero origin stories', 'mentors in the shadows', or movie trailer lines. React to what they ACTUALLY said.\n"
         "- If their tweet mentions a random anime/game character name you don't need, ignore the character name and focus on their actual homework/work struggle.\n"
         "- Use simple everyday words. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
-        "GOLD-STANDARD QUOTE-TWEET EXAMPLES:\n"
+        "GOLD-STANDARD QUOTE-TWEET EXAMPLES (Notice how every ending is unique to the situation, with zero 'close X / start Y' commands):\n"
         "- Quoted Tweet: 'I should really keep catching up on my homework but I deadass have zero motivation... if I don\\'t get off my ass and do something my dad will eviscerate me'\n"
-        "  Quote-Tweet: 'fear of an angry parent has a higher graduation rate than motivation ever will. knock out one page and survive.'\n"
+        "  Quote-Tweet: 'fear of an angry parent has a higher graduation rate than pure passion ever will—survival mode is undefeated once it kicks in.'\n"
         "- Quoted Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
-        "  Quote-Tweet: 'nobody cleans harder than someone avoiding a deadline. kitchen is spotless, now go write one terrible paragraph.'\n"
+        "  Quote-Tweet: 'nobody cleans harder than someone dreading a blank page, mostly because dishes have a clear finish line and essays don\\'t.'\n"
         "- Quoted Tweet: 'spent 3 hours tweaking my editor theme instead of writing the code'\n"
-        "  Quote-Tweet: 'customizing your setup feels like work until you realize the file is still blank. write the first ugly function.'\n"
+        "  Quote-Tweet: 'we spend hours picking fonts because you can\\'t fail at a color scheme, but the real relief only hits once the code actually runs.'\n"
         "- Quoted Tweet: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret' [Photo Attached]\n"
-        "  Quote-Tweet: 'acting panicked in the group chat while quietly locking in at home is undefeated. go ace that exam.'"
+        "  Quote-Tweet: 'acting panicked in the group chat while quietly locking in at home is how top grades are actually made.'"
     )
 
     clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
     media_note = "\n[Note: This tweet also has a photo/image attached that viewers will see right below your Quote-Tweet.]" if has_image else ""
     user_prompt = (
         f"Quoted Tweet:\n\"{clean_tweet}\"{media_note}\n\n"
-        f"Write a funny, crystal-clear, and motivating Quote-Tweet (45-140 chars) that directly fits this tweet, or output SKIP if off-topic:"
+        f"Write a funny, crystal-clear, and motivating Quote-Tweet (45-145 chars) unique to this exact tweet WITHOUT using 'close the X / start the Y' command endings, or output SKIP if off-topic:"
     )
 
     # Optional Pass 0: If the tweet has a photo and a Groq Vision model is enabled, inspect the actual image!

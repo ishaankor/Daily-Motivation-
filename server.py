@@ -119,9 +119,11 @@ def cron_trigger():
 
     secret = request.args.get("secret", "")
     if CRON_SECRET and secret != CRON_SECRET:
+        print("[Cron Daily] ❌ Rejected webhook: Invalid secret.", flush=True)
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
 
     if not twitter_config.daily_posting_enabled:
+        print("[Cron Daily] ⏸ Paused: ENABLE_DAILY_POSTING is false.", flush=True)
         return jsonify({
             "success": False,
             "paused": True,
@@ -129,6 +131,7 @@ def cron_trigger():
         }), 200
 
     if _daily_lock.locked():
+        print("[Cron Daily] ⏳ Skipped: Daily post workflow is already running.", flush=True)
         return jsonify({
             "success": True,
             "status": "already_running",
@@ -136,16 +139,19 @@ def cron_trigger():
         }), 200
 
     sync_mode = request.args.get("sync", "false").lower() in ("true", "1", "yes")
+    print(f"[Cron Daily] 🚀 Trigger received (sync={sync_mode}). Starting daily workflow...", flush=True)
     if sync_mode:
         with _daily_lock:
             _runtime_status["daily_running"] = True
             try:
                 res = _execute_daily_post()
                 _runtime_status["last_daily_run"] = res
+                sys.stdout.flush()
                 return jsonify(res), (200 if res.get("success") else 500)
             except Exception as e:
                 err_res = {"success": False, "error": str(e)}
                 _runtime_status["last_daily_run"] = err_res
+                print(f"[Cron Daily] ❌ Error: {e}", flush=True)
                 return jsonify(err_res), 500
             finally:
                 _runtime_status["daily_running"] = False
@@ -156,10 +162,13 @@ def cron_trigger():
             try:
                 res = _execute_daily_post()
                 _runtime_status["last_daily_run"] = res
+                print(f"[Cron Daily] ✅ Background daily workflow finished: {res}", flush=True)
             except Exception as e:
                 _runtime_status["last_daily_run"] = {"success": False, "error": str(e)}
+                print(f"[Cron Daily] ❌ Background error: {e}", flush=True)
             finally:
                 _runtime_status["daily_running"] = False
+                sys.stdout.flush()
 
     threading.Thread(target=_bg_daily, daemon=True).start()
     return jsonify({
@@ -218,9 +227,11 @@ def cron_engage_trigger():
 
     secret = request.args.get("secret", "")
     if CRON_SECRET and secret != CRON_SECRET:
+        print("[Cron Engage] ❌ Rejected webhook: Invalid secret.", flush=True)
         return jsonify({"error": "Unauthorized. Invalid secret."}), 401
 
     if not twitter_config.engagement_enabled:
+        print("[Cron Engage] ⏸ Paused: ENABLE_ENGAGEMENT is false.", flush=True)
         return jsonify({
             "success": False,
             "disabled": True,
@@ -228,6 +239,7 @@ def cron_engage_trigger():
         }), 200
 
     if _engage_lock.locked():
+        print("[Cron Engage] ⏳ Skipped: Growth loop is already running in background.", flush=True)
         return jsonify({
             "success": True,
             "status": "already_running",
@@ -243,6 +255,7 @@ def cron_engage_trigger():
 
         dry_run_param = request.args.get("dry_run", "false").lower()
         dry_run = dry_run_param in ["true", "1", "yes"]
+        force = request.args.get("force", "false").lower() in ["true", "1", "yes"]
         sync_mode = dry_run or (request.args.get("sync", "false").lower() in ["true", "1", "yes"])
         query_override = request.args.get("query", None)
         mode_param = request.args.get("mode", "auto")
@@ -256,18 +269,29 @@ def cron_engage_trigger():
                 max_age_hours = None
 
         # Pre-check velocity guardrail before spawning background thread in live mode
-        if not dry_run:
+        if not dry_run and not force:
             velocity = db_manager.get_reply_velocity_status(
                 max_daily=twitter_config.engagement_max_daily_replies,
                 min_cooldown_hours=twitter_config.engagement_min_cooldown_hours
             )
             if not velocity["can_reply"]:
+                print(
+                    f"[Cron Engage] 🛡 Velocity guardrail skipped run: {velocity['reason']} "
+                    f"(append &force=true to URL to override during testing)",
+                    flush=True
+                )
                 return jsonify({
                     "success": True,
                     "skipped": True,
                     "reason": velocity["reason"],
                     "velocity": velocity
                 }), 200
+
+        print(
+            f"[Cron Engage] 🚀 Trigger accepted (mode={mode_param}, count={count}, dry_run={dry_run}, force={force}). "
+            f"Launching growth loop...",
+            flush=True
+        )
 
         if sync_mode:
             with _engage_lock:
@@ -278,9 +302,11 @@ def cron_engage_trigger():
                         dry_run=dry_run,
                         query_override=query_override,
                         max_age_hours=max_age_hours,
-                        mode=mode_param
+                        mode=mode_param,
+                        force=force
                     )
                     _runtime_status["last_engage_run"] = result
+                    sys.stdout.flush()
                     status_code = 200 if result.get("success") else 500
                     return jsonify(result), status_code
                 finally:
@@ -295,13 +321,17 @@ def cron_engage_trigger():
                         dry_run=False,
                         query_override=query_override,
                         max_age_hours=max_age_hours,
-                        mode=mode_param
+                        mode=mode_param,
+                        force=force
                     )
                     _runtime_status["last_engage_run"] = res
+                    print(f"[Cron Engage] ✅ Background growth loop finished: {res.get('replies_posted', 0)} action(s) posted.", flush=True)
                 except Exception as e:
                     _runtime_status["last_engage_run"] = {"success": False, "error": str(e)}
+                    print(f"[Cron Engage] ❌ Background error: {e}", flush=True)
                 finally:
                     _runtime_status["engage_running"] = False
+                    sys.stdout.flush()
 
         threading.Thread(target=_bg_engage, daemon=True).start()
         return jsonify({

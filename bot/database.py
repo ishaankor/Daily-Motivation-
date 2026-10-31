@@ -411,17 +411,19 @@ class DatabaseManager:
             if pg_conn:
                 try:
                     with pg_conn.cursor() as cur:
+                        cur.execute("DELETE FROM bot_replies WHERE target_tweet_id LIKE 'test_tweet_%';")
                         cur.execute("""
                             SELECT COUNT(*),
                                    EXTRACT(EPOCH FROM (NOW() - MAX(created_at))) / 3600.0
                             FROM bot_replies
-                            WHERE created_at >= NOW() - INTERVAL '24 hours';
+                            WHERE created_at >= NOW() - INTERVAL '24 hours'
+                              AND target_tweet_id NOT LIKE 'test_tweet_%';
                         """)
                         row = cur.fetchone()
                         if row:
                             replies_24h = int(row[0] or 0)
                             if row[1] is not None:
-                                hours_since_last = max(0.0, float(row[1]))
+                                hours_since_last = round(max(0.0, float(row[1])), 2)
                     pg_conn.close()
                 except Exception as e:
                     print(f"[Database] Error checking velocity in PostgreSQL: {e}")
@@ -430,11 +432,14 @@ class DatabaseManager:
             try:
                 sq_conn = self.get_sqlite_connection()
                 cur = sq_conn.cursor()
+                cur.execute("DELETE FROM bot_replies WHERE target_tweet_id LIKE 'test_tweet_%';")
+                sq_conn.commit()
                 cur.execute("""
                     SELECT COUNT(*),
                            (julianday('now') - julianday(MAX(created_at))) * 24.0
                     FROM bot_replies
-                    WHERE created_at >= datetime('now', '-24 hours');
+                    WHERE created_at >= datetime('now', '-24 hours')
+                      AND target_tweet_id NOT LIKE 'test_tweet_%';
                 """)
                 row = cur.fetchone()
                 if row:
@@ -442,7 +447,7 @@ class DatabaseManager:
                     if sq_count > replies_24h:
                         replies_24h = sq_count
                         if row[1] is not None:
-                            hours_since_last = max(0.0, float(row[1]))
+                            hours_since_last = round(max(0.0, float(row[1])), 2)
                 sq_conn.close()
             except Exception as e:
                 print(f"[Database] Error checking velocity in SQLite: {e}")
