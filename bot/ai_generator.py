@@ -52,72 +52,97 @@ SIDE_QUEST_TOPICS = [
 
 POST_ARCHETYPES = [
     {
-        "id": "GUT_PUNCH_ONE_LINER",
-        "name": "The 1-Sentence Gut-Punch",
-        "card_length": "65 to 165 chars (1 or 2 razor-sharp sentences, single block, NO line breaks)",
+        "id": "SELF_HANDICAPPING_EXCUSE",
+        "name": "The Self-Handicapping Callout (Procrastination as Ego Insurance)",
+        "card_length": "120 to 290 chars (Short bold first line under 45 chars + 1-2 brutal paragraphs)",
         "instructions": (
-            "Write a single, devastatingly accurate 1-to-2 sentence psychological realization for the Apple Notes card. "
-            "No story setup ('Spent 30 minutes...'), no multi-paragraph intro. Just pure signal that makes a procrastinator feel immediately seen "
-            "and ready to start messy."
+            "Expose the secret ego-defense mechanism behind last-minute procrastination: people wait until the last possible hour ON PURPOSE "
+            "so that if the result is mediocre, they can tell themselves 'well, I did it in 30 minutes' instead of facing what their true 100% effort looks like. "
+            "Start with a short punchy header line (like 'hard pill to swallow:' or 'why you actually wait until 11pm:'), then deliver the ego-bruiser."
         ),
-        "example_card": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
-        "example_caption": "the mental weight of an unstarted task is 10x heavier than the work itself.",
-        "example_tweet_2": "Dread uses way more calories than execution ever does. What's the 20-minute task you've been carrying around all week?"
+        "example_card": (
+            "hard pill to swallow:\n\n"
+            "you procrastinate until the last minute on purpose so you have a built-in excuse if the result is mediocre.\n\n"
+            "saying 'i threw this together in an hour' protects your ego. trying for 3 days and still coming up short doesn't."
+        ),
+        "example_caption": "nobody wants to find out what their actual 100% effort looks like.",
+        "example_tweet_2": "The second you stop protecting your image and let yourself look like a beginner for an hour, the paralysis disappears. Where are you holding back just to keep an excuse handy?"
     },
     {
-        "id": "ANXIETY_TAX_REALIZATION",
-        "name": "The Mid-Thought Realization",
-        "card_length": "110 to 230 chars (1 or 2 natural blocks, conversational)",
+        "id": "WASTED_POTENTIAL_ADDICTION",
+        "name": "The 'Untapped Potential' Addiction",
+        "card_length": "120 to 290 chars (Short bold first line + 2 razor-sharp paragraphs)",
         "instructions": (
-            "Start right in the middle of a real human thought about why fake preparation (tabs, playlists, cleaning, tweaking tools) "
-            "feels safer than starting. Never start with 'Spent X minutes doing Y'. Expose the fear of a bad first draft and give the reader "
-            "relief to make an ugly start."
+            "Call out how people are secretly addicted to feeling like 'wasted potential' because 'I could crush this if I actually tried' "
+            "is a comfortable fantasy that never has to be tested against reality. Make the reader feel called out enough to prove it wrong today."
         ),
-        "example_card": "Researching better tools feels incredible because you can't fail at shopping.\n\nWriting the ugly first paragraph is where your ego is actually on the line.",
-        "example_caption": "buying a new notebook won't make the blank page any less intimidating.",
-        "example_tweet_2": "Preparation is a great hiding spot when you're scared your first attempt won't look like the finished version in your head. Where are you hiding today?"
+        "example_card": (
+            "uncomfortable truth:\n\n"
+            "a lot of you aren't scared of failing.\n\n"
+            "you're scared of giving something 100% of your focus for 6 months and finding out you're just normal—because right now you still get to comfort yourself with 'i could do it if i actually tried.'"
+        ),
+        "example_caption": "'untapped potential' is the most comfortable lie in the world.",
+        "example_tweet_2": "Potential expires the longer you hoard it to feel special. One messy, finished rep today beats another year of imaginary dominance. What have you been 'about to start' for months?"
     },
     {
-        "id": "TIMESTAMP_BRAIN_GLITCH",
-        "name": "The Timestamp Contrast",
-        "card_length": "95 to 220 chars (2 timestamped lines + 1 short takeaway line)",
+        "id": "AMBITION_COSPLAY_CHECKLIST",
+        "name": "The iOS Notes Checklist Callout (Ambition Cosplay)",
+        "card_length": "130 to 310 chars (Short title line + 3 unchecked '○ ' fake-progress items + 1 checked '● ' real uncomfortable item)",
         "instructions": (
-            "Use two contrasting timestamps (e.g., '2:00 PM:' vs '11:42 PM:' or 'Monday 9 AM:' vs 'Thursday 4 PM:') to show the absurdity "
-            "of how our brain treats a tiny task versus an absurd side quest, followed by a grounded 1-sentence shift in perspective."
+            "Format the note as a real iOS Apple Notes checklist using '○ ' for unchecked items and '● ' for the final checked item. "
+            "Expose how buying gear, reorganizing Notion, or hoarding tabs is just 'ambition cosplay'—rehearsing what a disciplined person looks like "
+            "to get free dopamine without risking embarrassment."
         ),
-        "example_card": "2:00 PM: Too mentally drained to reply to one important email.\n\n2:14 PM: Suddenly energized enough to reorganize 300 files in my Downloads folder.\n\nIt was never low energy. You were just dodging uncertainty.",
-        "example_caption": "amazing how fast your energy comes back the second the task has zero stakes.",
-        "example_tweet_2": "Whenever a 3-minute email feels impossible, it's usually because you're trying to write the perfect response instead of a clear one. Which message is sitting in your drafts?"
+        "example_card": (
+            "things that feel like progress but are just ambition cosplay:\n\n"
+            "○ buying a new domain name at 1am\n"
+            "○ rebuilding your notion dashboard from scratch\n"
+            "○ watching 3 hours of productivity setups on youtube\n"
+            "● doing the one uncomfortable task you've been dodging since tuesday"
+        ),
+        "example_caption": "we love the aesthetic of locking in way more than the actual work.",
+        "example_tweet_2": "Your brain will happily let you 'prepare' for 10 hours if it saves you from 20 minutes of feeling stupid on a real task. Which piece of fake prep are you using to stall today?"
     },
     {
-        "id": "ANTI_GUILT_RESET",
-        "name": "The Anti-Guilt Reset",
-        "card_length": "120 to 240 chars (2 warm, contrarian sentences)",
+        "id": "PERFECTIONISM_COPE",
+        "name": "The 'Perfectionism' Cope Destroyer",
+        "card_length": "110 to 275 chars (Bold opening claim + brutal distinction between high standards and fragile pride)",
         "instructions": (
-            "Write a warm, contrarian permission slip for someone who already wasted their morning or afternoon and is spiraling into guilt. "
-            "Remind them that throwing away the rest of the day out of shame is a trap, and one honest 25-minute block right now completely changes the day."
+            "Destroy the favorite lie procrastinators tell themselves: 'I'm just a perfectionist.' Point out that you cannot be a perfectionist "
+            "about something that doesn't exist yet—refusing to write an ugly first draft isn't high standards, it's fragile pride."
         ),
-        "example_card": "So you wasted the whole afternoon scrolling and doing fake chores. Forgive yourself right now.\n\nOne focused hour before bed still beats a whole day of guilt—and you don't need a fresh Monday to start.",
-        "example_caption": "stop waiting for tomorrow morning to rescue today.",
-        "example_tweet_2": "All-or-nothing thinking convinces you that a messy afternoon ruins the whole day, when really 20 honest minutes tonight puts you right back in motion. What's one small thing you can cross off before tonight?"
+        "example_card": (
+            "stop calling yourself a perfectionist when you haven't even started.\n\n"
+            "perfectionism is obsessing over the final 5% of something you already built.\n\n"
+            "staring at a blank page for four days because your first attempt might look rough isn't high standards. it's just fragile pride."
+        ),
+        "example_caption": "calling procrastination 'perfectionism' is the biggest cope on earth.",
+        "example_tweet_2": "High standards never stopped anyone from starting; only ego does. Let the first page be embarrassing so you actually have something to sharpen. What draft are you refusing to write ugly?"
     },
     {
-        "id": "TWO_LINE_DIAGNOSIS",
-        "name": "The 2-Line Diagnosis",
-        "card_length": "85 to 200 chars (2 punchy contrasting lines separated by a blank line)",
+        "id": "EXCUSE_VS_REALITY_RECEIPT",
+        "name": "The Excuse vs. Reality iOS Notes Receipt",
+        "card_length": "130 to 300 chars (Two contrasting checklist sections using '○ ' for excuses and '● ' for the blunt truth)",
         "instructions": (
-            "Write a sharp 2-line reframe: Line 1 names what we call the problem (laziness, bad focus, needing better habits); "
-            "Line 2 reveals what it actually is (perfectionism, fear of a rough first attempt, wanting the reward before the friction)."
+            "Write a two-part iOS Notes checklist contrasting 'what you say is holding you back:' (3 '○ ' items blaming time, systems, burnout, or mood) "
+            "against 'what is actually holding you back:' (1 brutal '● ' item exposing the refusal to sit with 25 minutes of boredom or bruised ego)."
         ),
-        "example_card": "Most people don't have a focus problem.\n\nThey have a 'terrified my first attempt won't look as good as it does in my head' problem.",
-        "example_caption": "lower the bar for the first 10 minutes and watch how fast you lock in.",
-        "example_tweet_2": "You can always edit a terrible page, but you can't edit a blank one. What's one thing you're overcomplicating today?"
+        "example_card": (
+            "what you say is blocking you:\n"
+            "○ not enough time in the day\n"
+            "○ haven't found the right routine yet\n"
+            "○ waiting until i feel locked in\n\n"
+            "what is actually blocking you:\n"
+            "● one 25-minute task that requires you to feel slightly incompetent without reaching for your phone"
+        ),
+        "example_caption": "your screen time report already knows the real answer.",
+        "example_tweet_2": "People will spend three weeks shopping for a 'better system' just to avoid 25 minutes of quiet friction. What's the one task you'd finish today if your phone was in another room?"
     }
 ]
 
 
 def _init_fallback_catalog() -> List[Dict[str, Any]]:
-    """Load default Multi-Archetype catalog from quotes_catalog.json with failsafe backup."""
+    """Load default Brutal Ego-Bruiser catalog from quotes_catalog.json with failsafe backup."""
     if os.path.exists(paths.catalog_path):
         try:
             with open(paths.catalog_path, "r", encoding="utf-8") as f:
@@ -128,16 +153,24 @@ def _init_fallback_catalog() -> List[Dict[str, Any]]:
             print(f"[Catalog] Note loading fallback from {paths.catalog_path}: {e}")
     return [
         {
-            "id": "arch_gut_punch_1",
-            "archetype": "GUT_PUNCH_ONE_LINER",
-            "card_text": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
-            "tweet_1": "the mental weight of an unstarted task is 10x heavier than the work itself.",
-            "tweet_2": "Dread uses way more calories than execution ever does. What's the 20-minute task you've been carrying around all week?",
-            "hook": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
-            "quote": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
+            "id": "ego_handicap_1",
+            "archetype": "SELF_HANDICAPPING_EXCUSE",
+            "card_text": (
+                "hard pill to swallow:\n\n"
+                "you procrastinate until the last minute on purpose so you have a built-in excuse if the result is mediocre.\n\n"
+                "saying 'i threw this together in an hour' protects your ego. trying for 3 days and still coming up short doesn't."
+            ),
+            "tweet_1": "nobody wants to find out what their actual 100% effort looks like.",
+            "tweet_2": "The second you stop protecting your image and let yourself look like a beginner for an hour, the paralysis disappears. Where are you holding back just to keep an excuse handy?",
+            "hook": "you procrastinate until the last minute on purpose so you have a built-in excuse if the result is mediocre.",
+            "quote": (
+                "hard pill to swallow:\n\n"
+                "you procrastinate until the last minute on purpose so you have a built-in excuse if the result is mediocre.\n\n"
+                "saying 'i threw this together in an hour' protects your ego. trying for 3 days and still coming up short doesn't."
+            ),
             "author": "Field Notes",
-            "category": "MENTAL TAX",
-            "theme": "The Planning Delusion",
+            "category": "EGO INSURANCE",
+            "theme": "The Fake Perfection Trap",
             "times_posted": 0,
             "last_posted": None
         }
@@ -190,24 +223,25 @@ def validate_character_limits(entry: Dict[str, Any]) -> bool:
     len_t2 = len(t2)
     len_card = len(card_text)
 
-    if not (12 <= len_t1 <= 275 and 15 <= len_t2 <= 250 and 35 <= len_card <= 275):
+    if not (12 <= len_t1 <= 275 and 15 <= len_t2 <= 250 and 45 <= len_card <= 390):
         print(
-            f"[Validation Warning] Length invalid: Card ({len_card}/275), "
+            f"[Validation Warning] Length invalid: Card ({len_card}/390), "
             f"Tweet 1 ({len_t1}/275), Tweet 2 ({len_t2}/250)"
         )
         return False
 
-    # Enforce punctuation in card_text: human writing uses periods or question marks
-    if "." not in card_text and "?" not in card_text and "!" not in card_text:
-        print("[Validation Warning] card_text missing standard punctuation. Rejecting unpunctuated AI run-on.")
+    # Enforce punctuation or checklist structure in card_text
+    if "." not in card_text and "?" not in card_text and "!" not in card_text and "●" not in card_text:
+        print("[Validation Warning] card_text missing standard punctuation or checklist marker. Rejecting.")
         return False
 
-    # Ban old Mad-Libs AI template phrases and robotic "Close the X. Open the Y." command endings
+    # Ban old Mad-Libs AI template phrases and soft therapist cliches
     banned_phrases = [
         "close the mop", "stop the shine", "wait for your sparkle", "shine on", "lock in for your",
         "close the doc", "close the tab", "close the planner", "open the document", "open the file",
         "put down the", "step away from the", "pause the playlist", "lock the phone in the other room",
-        "study session was completely wasted", "sit down with your notes", "study for 25 minutes"
+        "study session was completely wasted", "sit down with your notes", "study for 25 minutes",
+        "forgive yourself right now"
     ]
     combined_lower = f"{t1}\n{card_text}\n{t2}".lower()
     for bp in banned_phrases:
@@ -388,40 +422,43 @@ def generate_quote_with_groq(
         )
 
     system_prompt = (
-        "You write viral, deeply human Twitter posts for an account that shares raw Apple Notes screenshots about procrastination, "
-        "perfectionism, and getting unstuck.\n\n"
-        "WHY PREVIOUS POSTS FAILED (STRICT ANTI-AI RULES):\n"
-        "- NEVER use the formulaic 3-paragraph AI template: 'Spent X minutes doing Y -> Snarky 1-line contrast -> Close the X. Open the Y. Do Z.'\n"
-        "- NEVER start with 'Spent X minutes...', 'Just spent...', or 'Suddenly decided today was the afternoon to...'\n"
-        "- NEVER end with robotic imperative commands like 'Lock the phone in the other room. Sit down with your notes. Study for 25 minutes.' or 'Close the doc. Open the file.'\n"
-        "- NEVER copy-paste the Apple Notes card text into the tweet body caption (`tweet_1`). Real humans put the thought inside the screenshot and write a short, casual 1-liner reaction in the tweet above the image.\n"
-        "- NO forced internet slang ('cooked', 'diabolical', 'slay', 'sparkle') and NO quotation marks or bullet lists.\n\n"
+        "You write viral, brutally honest Twitter/X posts for an account that shares raw iPhone Apple Notes screenshots exposing "
+        "the hidden ego excuses behind procrastination, fake productivity, and 'untapped potential.'\n\n"
+        "THE VIRAL 'X-FACTOR' — BRUTAL EGO-BRUISERS (NOT POLITE THERAPIST ADVICE):\n"
+        "- Polite self-help advice ('you're just tired, forgive yourself') gets ignored. Viral posts expose the SECRET EXCUSE people use to protect their ego.\n"
+        "- Call out uncomfortable truths that make readers quote-tweet with 'delete this right now' or 'i feel attacked':\n"
+        "  * Waiting until the last minute on purpose so if you fail, you can say 'I barely tried'\n"
+        "  * Being addicted to feeling like 'wasted potential' because trying 100% and finding out you're average is terrifying\n"
+        "  * Using fake preparation (Notion templates, courses, desk setups) as 'ambition cosplay' to get free dopamine without risking embarrassment\n"
+        "  * Calling yourself a 'perfectionist' when you haven't even started (it's not high standards, it's fragile pride)\n"
+        "- Write `card_text` in raw, natural lowercase (like a real private note typed on an iPhone at 11:42 PM). Use '○ ' and '● ' when the archetype calls for an iOS Notes checklist.\n"
+        "- NEVER use the old 3-paragraph AI template ('Spent X minutes doing Y -> Close X. Open Y.').\n"
+        "- NEVER copy-paste `card_text` into `tweet_1`. `tweet_1` is the short, deadpan 1-sentence caption posted above the screenshot.\n\n"
         f"TODAY'S STRUCTURAL ARCHETYPE: {chosen_arch['name']} ({chosen_arch['id']})\n"
         f"- Card Format & Length: {chosen_arch['card_length']}\n"
         f"- Archetype Instructions: {chosen_arch['instructions']}\n\n"
         "WHAT YOU MUST GENERATE (JSON OBJECT):\n"
-        "1. \"card_text\": The text rendered INSIDE the Apple Notes screenshot image. Must follow today's archetype strictly (50 to 235 chars).\n"
-        "2. \"tweet_1\": The short, casual human 1-liner caption posted in the tweet body ABOVE the screenshot image (25 to 115 chars). "
-        "It must complement `card_text` without repeating the same words or sentences.\n"
-        "3. \"tweet_2\": A grounded 1-2 sentence reply in the thread beneath the image that offers a warm, insightful reframe + a natural question (under 235 chars).\n"
-        "4. \"category\": A short 2-word uppercase label (e.g., \"MENTAL TAX\", \"PERFECTIONISM\", \"FALSE START\", \"ALL OR NOTHING\").\n\n"
+        "1. \"card_text\": The raw note rendered INSIDE the iOS Apple Notes screenshot (90 to 340 chars). Follow today's archetype strictly.\n"
+        "2. \"tweet_1\": The short, deadpan 1-liner caption posted in the tweet body ABOVE the screenshot (25 to 115 chars). Must NOT repeat `card_text`.\n"
+        "3. \"tweet_2\": A sharp 1-2 sentence follow-up reply beneath the image that turns the callout into immediate action + a pointed question (under 235 chars).\n"
+        "4. \"category\": A short 2-word uppercase label (e.g., \"EGO INSURANCE\", \"AMBITION COSPLAY\", \"POTENTIAL COPE\", \"FRAGILE PRIDE\").\n\n"
         "GOLD-STANDARD EXAMPLE FOR TODAY'S ARCHETYPE:\n"
         "{\n"
         f'  "archetype": "{chosen_arch["id"]}",\n'
         f'  "card_text": {json.dumps(chosen_arch["example_card"])},\n'
         f'  "tweet_1": {json.dumps(chosen_arch["example_caption"])},\n'
         f'  "tweet_2": {json.dumps(chosen_arch["example_tweet_2"])},\n'
-        '  "category": "MENTAL TAX"\n'
+        '  "category": "EGO INSURANCE"\n'
         "}"
     )
 
     user_prompt = (
-        f"Generate a fresh post using the '{chosen_arch['name']}' ({chosen_arch['id']}) archetype, loosely inspired by the psychology of: '{theme_desc}'.\n\n"
+        f"Generate a brutal, scroll-stopping post using the '{chosen_arch['name']}' ({chosen_arch['id']}) archetype, exposing the ego excuse behind: '{theme_desc}'.\n\n"
         f"{avoid_block}"
         "Remember:\n"
-        "- `card_text` goes inside the Apple Notes image (follow the archetype structure, NO 'Spent X minutes... Close X. Open Y.' template).\n"
-        "- `tweet_1` is a short, casual 1-sentence caption for the tweet body (25-115 chars) that does NOT repeat `card_text`.\n"
-        "- `tweet_2` is the follow-up reply under the post (under 235 chars) ending with a natural question.\n"
+        "- `card_text` goes inside the iOS Apple Notes screenshot (raw lowercase realism, sharp ego-bruiser, NO soft therapist cliches).\n"
+        "- `tweet_1` is a short, deadpan 1-sentence caption for the tweet body (25-115 chars) that does NOT repeat `card_text`.\n"
+        "- `tweet_2` is the follow-up reply under the post (under 235 chars) ending with a pointed question.\n"
         "Respond ONLY in valid JSON."
     )
 
