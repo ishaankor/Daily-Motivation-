@@ -119,46 +119,61 @@ def render_apple_notes_card(
     div_y = top_y + 60
     draw.line([(m + 35, div_y), (width - m - 35, div_y)], fill=(48, 48, 52, 255), width=1)
 
-    # 5. Extract Narrative Paragraphs
-    content = entry.get("tweet_1") or entry.get("hook") or entry.get("quote", "")
-    paragraphs = [p.strip() for p in content.split("\n\n") if p.strip()]
+    # 5. Extract Narrative Blocks (supports 1-liner gut-punches, 2-line contrasts, and multi-block notes)
+    content = entry.get("card_text") or entry.get("quote") or entry.get("hook") or entry.get("tweet_1", "")
+    paragraphs = [p.strip() for p in content.replace("\n\n", "\n").split("\n") if p.strip()]
     if not paragraphs:
         paragraphs = [
-            "Just spent 35 minutes completely reorganizing my spice rack alphabetically to avoid writing one proposal.",
-            "The paprika is organized. The client is still waiting.",
-            "Step away from the seasonings. Open the document. Finish the draft."
+            "You aren't burnt out from working too hard. You're exhausted from thinking about the work for 9 hours without starting it."
         ]
 
-    # 6. Render Paragraphs with natural line height and spacing
-    text_x = m + 60
-    max_text_w = width - (m * 2) - 120
-    text_y = div_y + 75
-    line_spacing = 70
-    para_gap = 50
-
-    for idx, para in enumerate(paragraphs):
-        # Last paragraph is the punchline / reality check
-        is_last = (idx == len(paragraphs) - 1)
-        curr_font = font_punchline if is_last else font_body
-        curr_color = (255, 255, 255, 255) if is_last else (235, 235, 240, 255)
-
-        lines = wrap_text(para, curr_font, max_text_w, draw)
-
-        # Subtle vertical yellow bar on the punchline paragraph
-        if is_last and len(paragraphs) > 1:
-            bar_top = text_y - 4
-            bar_h = len(lines) * line_spacing + 4
-            draw.rounded_rectangle(
-                [text_x - 22, bar_top, text_x - 14, bar_top + bar_h],
-                radius=4,
-                fill=apple_yellow
-            )
-
+    # 6. Render Paragraphs with adaptive typography & vertical rhythm
+    text_x = m + 65
+    max_text_w = width - (m * 2) - 130
+    total_chars = sum(len(p) for p in paragraphs)
+    if len(paragraphs) == 1 and total_chars < 160:
+        # High-impact 1-liner / single-block layout
+        font_single = get_font(["Inter.ttf", "HelveticaNeue-Bold.ttc", "HelveticaNeue.ttc"], 52)
+        text_y = div_y + 160
+        line_spacing = 78
+        lines = wrap_text(paragraphs[0], font_single, max_text_w, draw)
+        bar_top = text_y - 6
+        bar_h = len(lines) * line_spacing + 6
+        draw.rounded_rectangle(
+            [text_x - 24, bar_top, text_x - 15, bar_top + bar_h],
+            radius=4,
+            fill=apple_yellow
+        )
         for line in lines:
-            draw.text((text_x, text_y), line, font=curr_font, fill=curr_color)
+            draw.text((text_x, text_y), line, font=font_single, fill=(255, 255, 255, 255))
             text_y += line_spacing
+    else:
+        text_y = div_y + 85
+        line_spacing = 70
+        para_gap = 52
 
-        text_y += para_gap
+        for idx, para in enumerate(paragraphs):
+            is_last = (idx == len(paragraphs) - 1)
+            curr_font = font_punchline if is_last else font_body
+            curr_color = (255, 255, 255, 255) if is_last else (235, 235, 240, 255)
+
+            lines = wrap_text(para, curr_font, max_text_w, draw)
+
+            # Subtle vertical yellow bar on the final block
+            if is_last:
+                bar_top = text_y - 4
+                bar_h = len(lines) * line_spacing + 4
+                draw.rounded_rectangle(
+                    [text_x - 22, bar_top, text_x - 14, bar_top + bar_h],
+                    radius=4,
+                    fill=apple_yellow
+                )
+
+            for line in lines:
+                draw.text((text_x, text_y), line, font=curr_font, fill=curr_color)
+                text_y += line_spacing
+
+            text_y += para_gap
 
     # 7. Bottom iOS Notes Status Bar
     foot_y = height - m - 45

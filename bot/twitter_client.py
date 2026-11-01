@@ -200,12 +200,16 @@ class TwitterClient:
         """
         t1_text = format_tweet_1(entry)
         t2_text = format_tweet_2(entry)
+        card_text = (entry.get("card_text") or entry.get("quote") or t1_text).strip()
+        archetype = entry.get("archetype", "MULTI_ARCHETYPE")
 
         print("\n" + "=" * 50)
-        print("          PREPARING TWEET THREAD")
+        print(f"          PREPARING TWEET THREAD ({archetype})")
         print("=" * 50)
         print(f"Attached Card Image: {image_path}")
-        print(f"\n--- TWEET 1 ({len(t1_text)}/280 chars) ---")
+        print(f"\n--- APPLE NOTES CARD ({len(card_text)} chars) ---")
+        print(card_text)
+        print(f"\n--- TWEET 1 (CAPTION) ({len(t1_text)}/280 chars) ---")
         print(t1_text)
         print(f"\n--- TWEET 2 (REPLY) ({len(t2_text)}/280 chars) ---")
         print(t2_text)

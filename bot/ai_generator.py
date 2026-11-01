@@ -50,33 +50,94 @@ SIDE_QUEST_TOPICS = [
     "The Cold Brew Science (Sterilizing glass jars and calculating steep ratios instead of drafting a project proposal)"
 ]
 
+POST_ARCHETYPES = [
+    {
+        "id": "GUT_PUNCH_ONE_LINER",
+        "name": "The 1-Sentence Gut-Punch",
+        "card_length": "65 to 165 chars (1 or 2 razor-sharp sentences, single block, NO line breaks)",
+        "instructions": (
+            "Write a single, devastatingly accurate 1-to-2 sentence psychological realization for the Apple Notes card. "
+            "No story setup ('Spent 30 minutes...'), no multi-paragraph intro. Just pure signal that makes a procrastinator feel immediately seen "
+            "and ready to start messy."
+        ),
+        "example_card": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
+        "example_caption": "the mental weight of an unstarted task is 10x heavier than the work itself.",
+        "example_tweet_2": "Dread uses way more calories than execution ever does. What's the 20-minute task you've been carrying around all week?"
+    },
+    {
+        "id": "ANXIETY_TAX_REALIZATION",
+        "name": "The Mid-Thought Realization",
+        "card_length": "110 to 230 chars (1 or 2 natural blocks, conversational)",
+        "instructions": (
+            "Start right in the middle of a real human thought about why fake preparation (tabs, playlists, cleaning, tweaking tools) "
+            "feels safer than starting. Never start with 'Spent X minutes doing Y'. Expose the fear of a bad first draft and give the reader "
+            "relief to make an ugly start."
+        ),
+        "example_card": "Researching better tools feels incredible because you can't fail at shopping.\n\nWriting the ugly first paragraph is where your ego is actually on the line.",
+        "example_caption": "buying a new notebook won't make the blank page any less intimidating.",
+        "example_tweet_2": "Preparation is a great hiding spot when you're scared your first attempt won't look like the finished version in your head. Where are you hiding today?"
+    },
+    {
+        "id": "TIMESTAMP_BRAIN_GLITCH",
+        "name": "The Timestamp Contrast",
+        "card_length": "95 to 220 chars (2 timestamped lines + 1 short takeaway line)",
+        "instructions": (
+            "Use two contrasting timestamps (e.g., '2:00 PM:' vs '11:42 PM:' or 'Monday 9 AM:' vs 'Thursday 4 PM:') to show the absurdity "
+            "of how our brain treats a tiny task versus an absurd side quest, followed by a grounded 1-sentence shift in perspective."
+        ),
+        "example_card": "2:00 PM: Too mentally drained to reply to one important email.\n\n2:14 PM: Suddenly energized enough to reorganize 300 files in my Downloads folder.\n\nIt was never low energy. You were just dodging uncertainty.",
+        "example_caption": "amazing how fast your energy comes back the second the task has zero stakes.",
+        "example_tweet_2": "Whenever a 3-minute email feels impossible, it's usually because you're trying to write the perfect response instead of a clear one. Which message is sitting in your drafts?"
+    },
+    {
+        "id": "ANTI_GUILT_RESET",
+        "name": "The Anti-Guilt Reset",
+        "card_length": "120 to 240 chars (2 warm, contrarian sentences)",
+        "instructions": (
+            "Write a warm, contrarian permission slip for someone who already wasted their morning or afternoon and is spiraling into guilt. "
+            "Remind them that throwing away the rest of the day out of shame is a trap, and one honest 25-minute block right now completely changes the day."
+        ),
+        "example_card": "So you wasted the whole afternoon scrolling and doing fake chores. Forgive yourself right now.\n\nOne focused hour before bed still beats a whole day of guilt—and you don't need a fresh Monday to start.",
+        "example_caption": "stop waiting for tomorrow morning to rescue today.",
+        "example_tweet_2": "All-or-nothing thinking convinces you that a messy afternoon ruins the whole day, when really 20 honest minutes tonight puts you right back in motion. What's one small thing you can cross off before tonight?"
+    },
+    {
+        "id": "TWO_LINE_DIAGNOSIS",
+        "name": "The 2-Line Diagnosis",
+        "card_length": "85 to 200 chars (2 punchy contrasting lines separated by a blank line)",
+        "instructions": (
+            "Write a sharp 2-line reframe: Line 1 names what we call the problem (laziness, bad focus, needing better habits); "
+            "Line 2 reveals what it actually is (perfectionism, fear of a rough first attempt, wanting the reward before the friction)."
+        ),
+        "example_card": "Most people don't have a focus problem.\n\nThey have a 'terrified my first attempt won't look as good as it does in my head' problem.",
+        "example_caption": "lower the bar for the first 10 minutes and watch how fast you lock in.",
+        "example_tweet_2": "You can always edit a terrible page, but you can't edit a blank one. What's one thing you're overcomplicating today?"
+    }
+]
+
 
 def _init_fallback_catalog() -> List[Dict[str, Any]]:
-    """Load default 32-entry catalog from quotes_catalog.json with failsafe backup."""
+    """Load default Multi-Archetype catalog from quotes_catalog.json with failsafe backup."""
     if os.path.exists(paths.catalog_path):
         try:
             with open(paths.catalog_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                if isinstance(data, list) and len(data) >= 10 and data[0].get("tweet_1"):
+                if isinstance(data, list) and len(data) >= 5 and data[0].get("card_text"):
                     return data
         except Exception as e:
             print(f"[Catalog] Note loading fallback from {paths.catalog_path}: {e}")
     return [
         {
-            "id": "sq_cleaning_1",
-            "tweet_1": (
-                "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.\n\n"
-                "The paprika is in order, but the proposal is still blank.\n\n"
-                "We clean when we are afraid of a bad first draft—once you accept the first page can be messy, the dread disappears."
-            ),
-            "tweet_2": (
-                "The sudden urge to reorganize your kitchen is just perfectionism wearing an apron."
-            ),
-            "hook": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.",
-            "quote": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.",
+            "id": "arch_gut_punch_1",
+            "archetype": "GUT_PUNCH_ONE_LINER",
+            "card_text": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
+            "tweet_1": "the mental weight of an unstarted task is 10x heavier than the work itself.",
+            "tweet_2": "Dread uses way more calories than execution ever does. What's the 20-minute task you've been carrying around all week?",
+            "hook": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
+            "quote": "You aren't tired. You're just exhausted from thinking about the same 20-minute task for four straight days without starting it.",
             "author": "Field Notes",
-            "category": "FAKE CHORES",
-            "theme": "Aesthetic Organization",
+            "category": "MENTAL TAX",
+            "theme": "The Planning Delusion",
             "times_posted": 0,
             "last_posted": None
         }
@@ -87,11 +148,11 @@ FALLBACK_CATALOG = _init_fallback_catalog()
 
 
 def format_tweet_1(entry: Dict[str, Any]) -> str:
-    """Format primary tweet: Formula 2 conversational narrative (NO BULLETS, NO QUOTES)."""
+    """Format primary tweet caption (short human observation above the Apple Notes card)."""
     t1 = entry.get("tweet_1")
     if t1:
         return t1.strip()
-    return entry.get("hook", "").strip()
+    return (entry.get("card_text") or entry.get("hook") or "").strip()
 
 
 REPLY_MAGNET_QUESTIONS = [
@@ -120,43 +181,43 @@ def format_tweet_2(entry: Dict[str, Any]) -> str:
 
 
 def validate_character_limits(entry: Dict[str, Any]) -> bool:
-    """Ensure both tweets meet character limits, have proper punctuation, and sound like real human speech."""
+    """Ensure card_text, tweet_1 caption, and tweet_2 meet character limits and avoid robotic AI templates."""
     t1 = format_tweet_1(entry)
     t2 = format_tweet_2(entry)
+    card_text = (entry.get("card_text") or entry.get("quote") or entry.get("hook") or t1).strip()
+
     len_t1 = len(t1)
     len_t2 = len(t2)
+    len_card = len(card_text)
 
-    if not (0 < len_t1 <= 275 and 0 < len_t2 <= 250):
-        print(f"[Validation Warning] Length invalid: Tweet 1 ({len_t1}/275), Tweet 2 ({len_t2}/250)")
+    if not (12 <= len_t1 <= 275 and 15 <= len_t2 <= 250 and 35 <= len_card <= 275):
+        print(
+            f"[Validation Warning] Length invalid: Card ({len_card}/275), "
+            f"Tweet 1 ({len_t1}/275), Tweet 2 ({len_t2}/250)"
+        )
         return False
 
-    # Check for paragraph structure (must have blank lines separating setup, reality check, and motivation)
-    paras = [p.strip() for p in t1.split("\n\n") if p.strip()]
-    if len(paras) < 2:
-        print("[Validation Warning] Tweet 1 missing multi-paragraph structure (need setup + reality check + motivation).")
+    # Enforce punctuation in card_text: human writing uses periods or question marks
+    if "." not in card_text and "?" not in card_text and "!" not in card_text:
+        print("[Validation Warning] card_text missing standard punctuation. Rejecting unpunctuated AI run-on.")
         return False
 
-    # Enforce punctuation: human writing uses periods or question marks, not unpunctuated run-on strings
-    if "." not in t1 and "?" not in t1 and "!" not in t1:
-        print("[Validation Warning] Tweet 1 missing standard punctuation. Rejecting unpunctuated AI run-on.")
-        return False
-
-    # Ban forced slang / AI glitches and robotic "Close the X. Open the Y." command endings
+    # Ban old Mad-Libs AI template phrases and robotic "Close the X. Open the Y." command endings
     banned_phrases = [
         "close the mop", "stop the shine", "wait for your sparkle", "shine on", "lock in for your",
         "close the doc", "close the tab", "close the planner", "open the document", "open the file",
-        "put down the", "step away from the", "pause the playlist"
+        "put down the", "step away from the", "pause the playlist", "lock the phone in the other room",
+        "study session was completely wasted", "sit down with your notes", "study for 25 minutes"
     ]
-    t1_lower = t1.lower()
+    combined_lower = f"{t1}\n{card_text}\n{t2}".lower()
     for bp in banned_phrases:
-        if bp in t1_lower:
-            print(f"[Validation Warning] Tweet 1 contains banned AI template phrase: '{bp}'. Rejecting.")
+        if bp in combined_lower:
+            print(f"[Validation Warning] Entry contains banned AI template phrase: '{bp}'. Rejecting.")
             return False
 
-    # Ensure the final paragraph is a substantive motivational insight (not a 3-word robotic command)
-    last_para = paras[-1].strip()
-    if len(last_para) < 25:
-        print(f"[Validation Warning] Final paragraph is too brief/robotic ('{last_para}'). Rejecting.")
+    # Ensure Tweet 1 caption and Apple Notes card_text aren't lazy verbatim duplicates when card_text is explicitly set
+    if entry.get("card_text") and t1.strip().lower() == card_text.strip().lower():
+        print("[Validation Warning] tweet_1 caption is an exact duplicate of card_text. Rejecting.")
         return False
 
     return True
@@ -236,24 +297,36 @@ def is_entry_unique(
     1. Direct duplicate / substring match.
     2. Token Jaccard similarity against any post in last 30 days (< threshold).
     3. Shared subject cluster / domain with posts in the last 7 days.
-    4. Category repetition against yesterday's post.
+    4. Category or structural archetype repetition against yesterday's post.
     """
+    c_card = (candidate.get("card_text") or candidate.get("quote") or candidate.get("hook") or "").strip()
     c_t1 = format_tweet_1(candidate)
-    c_hook = candidate.get("hook", "")
-    c_cat = candidate.get("category", "").upper()
+    c_combined = f"{c_card} {c_t1}".strip()
+    c_hook = candidate.get("hook", "") or c_card
+    c_cat = (candidate.get("category") or "").upper()
+    c_arch = (candidate.get("archetype") or "").upper()
 
     if not recent_entries:
         return True, "OK (no recent history)"
 
-    # 1. Category check against immediately preceding post (index 0 is most recent)
+    # 1. Category & Archetype check against immediately preceding post (index 0 is most recent)
     if recent_entries:
         last_cat = (recent_entries[0].get("category") or "").upper()
         if c_cat and last_cat and c_cat == last_cat:
             return False, f"Category '{c_cat}' repeats yesterday's category"
+        last_arch = (recent_entries[0].get("archetype") or "").upper()
+        if c_arch and last_arch and c_arch == last_arch:
+            return False, f"Archetype '{c_arch}' repeats yesterday's structural archetype"
 
     # 2. Check against recent history (up to last 30 posts)
     for idx, past in enumerate(recent_entries[:30]):
-        past_text = past.get("quote") or past.get("tweet_1") or past.get("hook") or ""
+        past_text = (
+            past.get("card_text")
+            or past.get("quote")
+            or past.get("tweet_1")
+            or past.get("hook")
+            or ""
+        )
         if not past_text:
             continue
 
@@ -262,12 +335,12 @@ def is_entry_unique(
             return False, f"Hook duplicates past post #{idx+1}: '{past_text[:50]}...'"
 
         # Jaccard word similarity
-        sim = calculate_jaccard_similarity(c_t1, past_text)
+        sim = calculate_jaccard_similarity(c_combined, past_text)
         if sim >= similarity_threshold:
             return False, f"Word similarity {sim:.2f} >= {similarity_threshold} with post #{idx+1}: '{past_text[:50]}...'"
 
         # Subject cluster collision within last 7 posts
-        if idx < 7 and shares_subject_cluster(c_t1, past_text):
+        if idx < 7 and shares_subject_cluster(c_combined, past_text):
             return False, f"Shares subject cluster with recent post #{idx+1}: '{past_text[:50]}...'"
 
     return True, "OK"
@@ -279,7 +352,7 @@ def generate_quote_with_groq(
     recent_history: Optional[List[Dict[str, Any]]] = None,
     retries: int = 3
 ) -> Optional[Dict[str, Any]]:
-    """Call Groq API to generate a natural, witty, deadpan human tweet (relatable observation + grounded motivation)."""
+    """Call Groq API to generate a rotating Multi-Archetype Apple Notes card + non-duplicate tweet caption."""
     if not ai_config.groq_api_key:
         print("[AI Generator] No GROQ_API_KEY set. Falling back to local catalog.")
         return None
@@ -289,68 +362,67 @@ def generate_quote_with_groq(
         "Content-Type": "application/json"
     }
 
+    # Pick an archetype that does not repeat the most recent post's archetype
+    last_arch = ""
+    if recent_history:
+        last_arch = (recent_history[0].get("archetype") or "").upper()
+    eligible_archetypes = [a for a in POST_ARCHETYPES if a["id"] != last_arch] or POST_ARCHETYPES
+    chosen_arch = random.choice(eligible_archetypes)
+
     # Build negative context to explicitly forbid repetition
     avoid_snippets = []
     if recent_history:
         for item in recent_history[:10]:
-            q = item.get("quote") or item.get("tweet_1") or ""
+            q = item.get("card_text") or item.get("quote") or item.get("tweet_1") or ""
             if q:
                 first_sent = q.split(". ")[0].split("\n")[0].strip()
                 avoid_snippets.append(f"- \"{first_sent}\"")
-    
+
     avoid_block = ""
     if avoid_snippets:
         avoid_block = (
             "\nRECENTLY COVERED TOPICS (YOU ARE STRICTLY FORBIDDEN FROM REPEATING OR IMITATING THESE):\n"
             + "\n".join(avoid_snippets)
-            + "\nCRITICAL MANDATE: Write about a completely different, fresh avoidance scenario. "
+            + "\nCRITICAL MANDATE: Write about a completely different, fresh psychological angle or scenario. "
             "Do NOT touch the same items, apps, chores, or objects listed above.\n\n"
         )
 
     system_prompt = (
-        "You are a witty, observational writer (think Jerry Seinfeld, Tim Urban, or David Sedaris) writing relatable, honest tweets about modern procrastination.\n\n"
-        "CORE VOICE RULES — WRITE LIKE A REAL HUMAN:\n"
-        "- Write naturally in clean, standard English. Use normal sentence structure, capitalization, and punctuation (periods, commas).\n"
-        "- NEVER USE ROBOTIC AI COMMAND ENDINGS: Strictly forbid staccato imperative endings like 'Close the X. Open the Y. Finish the Z.' or 'Put down the X. Start the Y.' Real humans do not talk like that.\n"
-        "- NO FORCED SLANG: Never use cringe internet buzzwords ('sparkle', 'close the mop', 'stop the shine', 'diabolical', 'cooked', 'slay').\n"
-        "- NO NUMBERED LISTS, BULLET POINTS, OR QUOTATION MARKS.\n\n"
-        "STRUCTURE OF TWEET 1 (Must be 3 short, distinct paragraphs, strictly under 265 chars total):\n"
-        "Paragraph 1 (The Setup): A specific, funny description of an avoidance behavior you caught yourself doing.\n"
-        "Paragraph 2 (The Reality Check): A short, dry 1-sentence truth showing why that side quest didn't solve the real problem.\n"
-        "Paragraph 3 (Unique Contextual Motivation): A natural, insightful sentence that speaks directly to the psychology of THAT specific situation and makes the reader genuinely want to tackle the real thing—without using cookie-cutter 'Close the X. Open the Y.' commands.\n\n"
-        "TWEET 2 (Thread Reply & Engagement Hook): 1 calm, natural sentence delivering a deeper insight on why we avoid that specific kind of discomfort, followed by a casual question.\n\n"
-        "GOLD-STANDARD HUMAN EXAMPLES (Notice how every ending is completely unique to the context):\n\n"
-        "Example 1:\n"
+        "You write viral, deeply human Twitter posts for an account that shares raw Apple Notes screenshots about procrastination, "
+        "perfectionism, and getting unstuck.\n\n"
+        "WHY PREVIOUS POSTS FAILED (STRICT ANTI-AI RULES):\n"
+        "- NEVER use the formulaic 3-paragraph AI template: 'Spent X minutes doing Y -> Snarky 1-line contrast -> Close the X. Open the Y. Do Z.'\n"
+        "- NEVER start with 'Spent X minutes...', 'Just spent...', or 'Suddenly decided today was the afternoon to...'\n"
+        "- NEVER end with robotic imperative commands like 'Lock the phone in the other room. Sit down with your notes. Study for 25 minutes.' or 'Close the doc. Open the file.'\n"
+        "- NEVER copy-paste the Apple Notes card text into the tweet body caption (`tweet_1`). Real humans put the thought inside the screenshot and write a short, casual 1-liner reaction in the tweet above the image.\n"
+        "- NO forced internet slang ('cooked', 'diabolical', 'slay', 'sparkle') and NO quotation marks or bullet lists.\n\n"
+        f"TODAY'S STRUCTURAL ARCHETYPE: {chosen_arch['name']} ({chosen_arch['id']})\n"
+        f"- Card Format & Length: {chosen_arch['card_length']}\n"
+        f"- Archetype Instructions: {chosen_arch['instructions']}\n\n"
+        "WHAT YOU MUST GENERATE (JSON OBJECT):\n"
+        "1. \"card_text\": The text rendered INSIDE the Apple Notes screenshot image. Must follow today's archetype strictly (50 to 235 chars).\n"
+        "2. \"tweet_1\": The short, casual human 1-liner caption posted in the tweet body ABOVE the screenshot image (25 to 115 chars). "
+        "It must complement `card_text` without repeating the same words or sentences.\n"
+        "3. \"tweet_2\": A grounded 1-2 sentence reply in the thread beneath the image that offers a warm, insightful reframe + a natural question (under 235 chars).\n"
+        "4. \"category\": A short 2-word uppercase label (e.g., \"MENTAL TAX\", \"PERFECTIONISM\", \"FALSE START\", \"ALL OR NOTHING\").\n\n"
+        "GOLD-STANDARD EXAMPLE FOR TODAY'S ARCHETYPE:\n"
         "{\n"
-        '  "tweet_1": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal.\\n\\nThe paprika is in order, but the proposal is still blank.\\n\\nWe clean when we are afraid of a bad first draft—once you accept the first page can be messy, the dread disappears.",\n'
-        '  "tweet_2": "The sudden urge to deep-clean is just perfectionism wearing an apron.",\n'
-        '  "category": "FAKE CHORES",\n'
-        '  "hook": "Just spent 35 minutes reorganizing my spice rack alphabetically to avoid writing a client proposal."\n'
-        "}\n\n"
-        "Example 2:\n"
-        "{\n"
-        '  "tweet_1": "Spent 40 minutes curating a focus playlist on Spotify for a task that only takes 10 minutes.\\n\\nYou do not need a movie soundtrack to reply to three emails.\\n\\nWaiting until you feel in the mood is a trap; momentum only shows up after you start, never before.",\n'
-        '  "tweet_2": "Trying to engineer the perfect vibe is the easiest way to lose an entire afternoon.",\n'
-        '  "category": "SPOTIFY TRAP",\n'
-        '  "hook": "Spent 40 minutes curating a focus playlist on Spotify for a task that only takes 10 minutes."\n'
-        "}\n\n"
-        "Example 3:\n"
-        "{\n"
-        '  "tweet_1": "Spent an hour reading reviews on mechanical keyboards instead of working on the report due tomorrow.\\n\\nA quieter spacebar will not write your summary for you.\\n\\nResearching better tools feels safe because you cannot fail at shopping, but real progress only happens when you risk a rough attempt.",\n'
-        '  "tweet_2": "Buying gear gives you the dopamine of progress without any of the vulnerability of actual work.",\n'
-        '  "category": "GEAR TRAP",\n'
-        '  "hook": "Spent an hour reading reviews on mechanical keyboards instead of working on the report due tomorrow."\n'
-        "}\n\n"
-        "Length limits: \"tweet_1\" strictly under 265 chars (3 paragraphs). \"tweet_2\" strictly under 240 chars.\n"
-        "Return a JSON object with keys: \"tweet_1\", \"tweet_2\", \"category\", \"hook\", \"quote\" (duplicate of hook), \"author\" ('Field Notes')."
+        f'  "archetype": "{chosen_arch["id"]}",\n'
+        f'  "card_text": {json.dumps(chosen_arch["example_card"])},\n'
+        f'  "tweet_1": {json.dumps(chosen_arch["example_caption"])},\n'
+        f'  "tweet_2": {json.dumps(chosen_arch["example_tweet_2"])},\n'
+        '  "category": "MENTAL TAX"\n'
+        "}"
     )
 
     user_prompt = (
-        f"Write an authentic, witty, and genuinely MOTIVATING tweet pair about: '{theme_name}' ({theme_desc}).\n\n"
+        f"Generate a fresh post using the '{chosen_arch['name']}' ({chosen_arch['id']}) archetype, loosely inspired by the psychology of: '{theme_desc}'.\n\n"
         f"{avoid_block}"
-        f"CRITICAL: Do NOT end with robotic commands like 'Close the X. Open the Y. Send the Z.' "
-        f"Make the 3rd paragraph a unique, human motivational realization tailored specifically to '{theme_name}'.\n"
-        f"Strictly under 265 chars for tweet_1 and under 240 chars for tweet_2. Respond ONLY in valid JSON."
+        "Remember:\n"
+        "- `card_text` goes inside the Apple Notes image (follow the archetype structure, NO 'Spent X minutes... Close X. Open Y.' template).\n"
+        "- `tweet_1` is a short, casual 1-sentence caption for the tweet body (25-115 chars) that does NOT repeat `card_text`.\n"
+        "- `tweet_2` is the follow-up reply under the post (under 235 chars) ending with a natural question.\n"
+        "Respond ONLY in valid JSON."
     )
 
     primary = ai_config.groq_model
@@ -388,6 +460,11 @@ def generate_quote_with_groq(
                     content = data["choices"][0]["message"]["content"]
                     parsed = json.loads(content)
 
+                    card_text = (parsed.get("card_text") or parsed.get("quote") or parsed.get("hook") or "").strip()
+                    parsed["card_text"] = card_text
+                    parsed["hook"] = card_text
+                    parsed["quote"] = card_text
+                    parsed["archetype"] = parsed.get("archetype") or chosen_arch["id"]
                     parsed["id"] = f"sq_{int(time.time())}_{random.randint(100, 999)}"
                     parsed["theme"] = theme_name
                     parsed["author"] = "Field Notes"
@@ -434,7 +511,7 @@ class QuotesCatalog:
             try:
                 with open(self.file_path, "r", encoding="utf-8") as f:
                     self.catalog = json.load(f)
-                if not self.catalog or not self.catalog[0].get("tweet_1"):
+                if not self.catalog or not self.catalog[0].get("card_text"):
                     self.catalog = list(FALLBACK_CATALOG)
                     self.save()
             except Exception as e:
