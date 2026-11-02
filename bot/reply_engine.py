@@ -644,6 +644,12 @@ async def run_engagement_cycle(
     print(f"\n[Engagement Info] Selected {len(candidates)} scored candidates. Processing up to {effective_count}...\n")
     outbound_count = 0
     recent_replies_cache = db_manager.get_recent_replies(limit=20)
+    base_turn_id = int(recent_replies_cache[0].get("id") or len(recent_replies_cache)) if recent_replies_cache else 0
+
+    # If this run's first turn in 'auto' mode is a Quote-Tweet turn (every 3rd engagement),
+    # bubble photo-attached candidates to the front so Quote-Tweets strike visual gold.
+    if clean_mode == "quote" or (clean_mode == "auto" and (base_turn_id % 3 == 2)):
+        candidates.sort(key=lambda t: (bool(get_tweet_photo_urls(t)), score_candidate_tweet(t)), reverse=True)
 
     for idx, tweet in enumerate(candidates):
         if outbound_count >= effective_count:
@@ -661,12 +667,11 @@ async def run_engagement_cycle(
         photo_urls = get_tweet_photo_urls(tweet)
 
         # Decide action type: 'quote' vs 'reply'
-        # Quote-Tweets of images (desk setups, study sessions, coding screens) strike gold on the timeline,
-        # so in 'auto' mode we automatically Quote-Tweet any candidate with an attached photo (or every 3rd turn).
-        should_rotate_qt = (len(recent_replies_cache) % 3 == 2)
+        # Strictly rotate 2 Peer Replies -> 1 Quote-Tweet using monotonic DB id (never stuck at limit=20)
+        should_rotate_qt = ((base_turn_id + outbound_count) % 3 == 2)
         use_quote_tweet = (
             clean_mode == "quote"
-            or (clean_mode == "auto" and (should_rotate_qt or bool(photo_urls)))
+            or (clean_mode == "auto" and should_rotate_qt)
         )
         action_label = "QUOTE TWEET (Field Note)" if use_quote_tweet else "WAVE-SURFING PEER REPLY"
 

@@ -348,20 +348,22 @@ class DatabaseManager:
                 try:
                     with pg_conn.cursor() as cur:
                         cur.execute("""
-                            SELECT target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
+                            SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
                             FROM bot_replies
-                            ORDER BY created_at DESC
+                            WHERE target_tweet_id NOT LIKE 'test_tweet_%'
+                            ORDER BY id DESC
                             LIMIT %s;
                         """, (limit,))
                         rows = cur.fetchall()
                         for r in rows:
                             results.append({
-                                "target_tweet_id": r[0],
-                                "target_screen_name": r[1],
-                                "original_tweet_text": r[2],
-                                "reply_tweet_id": r[3],
-                                "reply_text": r[4],
-                                "created_at": str(r[5])
+                                "id": int(r[0] or 0),
+                                "target_tweet_id": r[1],
+                                "target_screen_name": r[2],
+                                "original_tweet_text": r[3],
+                                "reply_tweet_id": r[4],
+                                "reply_text": r[5],
+                                "created_at": str(r[6])
                             })
                     pg_conn.close()
                     return results
@@ -372,20 +374,22 @@ class DatabaseManager:
             sq_conn = self.get_sqlite_connection()
             cur = sq_conn.cursor()
             cur.execute("""
-                SELECT target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
+                SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
                 FROM bot_replies
-                ORDER BY created_at DESC
+                WHERE target_tweet_id NOT LIKE 'test_tweet_%'
+                ORDER BY id DESC
                 LIMIT ?;
             """, (limit,))
             rows = cur.fetchall()
             for r in rows:
                 results.append({
-                    "target_tweet_id": r[0],
-                    "target_screen_name": r[1],
-                    "original_tweet_text": r[2],
-                    "reply_tweet_id": r[3],
-                    "reply_text": r[4],
-                    "created_at": str(r[5])
+                    "id": int(r[0] or 0),
+                    "target_tweet_id": r[1],
+                    "target_screen_name": r[2],
+                    "original_tweet_text": r[3],
+                    "reply_tweet_id": r[4],
+                    "reply_text": r[5],
+                    "created_at": str(r[6])
                 })
             sq_conn.close()
         except Exception as e:
