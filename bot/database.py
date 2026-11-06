@@ -69,8 +69,10 @@ class DatabaseManager:
                             original_tweet_text TEXT,
                             reply_tweet_id TEXT,
                             reply_text TEXT,
+                            action_type TEXT DEFAULT 'reply',
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                         );
+                        ALTER TABLE bot_replies ADD COLUMN IF NOT EXISTS action_type TEXT DEFAULT 'reply';
                     """)
                 pg_conn.close()
                 print("[Database] Connected & initialized Supabase PostgreSQL tables.")
@@ -104,9 +106,14 @@ class DatabaseManager:
                     original_tweet_text TEXT,
                     reply_tweet_id TEXT,
                     reply_text TEXT,
+                    action_type TEXT DEFAULT 'reply',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+            try:
+                sq_conn.execute("ALTER TABLE bot_replies ADD COLUMN action_type TEXT DEFAULT 'reply';")
+            except Exception:
+                pass
         sq_conn.close()
         print(f"[Database] Initialized local SQLite database at: {db_config.sqlite_path}")
 
@@ -288,10 +295,13 @@ class DatabaseManager:
         target_screen_name: str,
         original_tweet_text: str,
         reply_tweet_id: Optional[str],
-        reply_text: str
+        reply_text: str,
+        action_type: str = "reply"
     ) -> bool:
-        """Record an engagement reply in the database."""
+        """Record an engagement reply or quote-tweet in the database."""
         clean_handle = (target_screen_name or "").lstrip("@")
+        clean_action = (action_type or "reply").strip().lower()
+        pg_ok = False
 
         if not self.use_sqlite:
             pg_conn = self.get_postgres_connection()
@@ -300,8 +310,8 @@ class DatabaseManager:
                     with pg_conn.cursor() as cur:
                         cur.execute("""
                             INSERT INTO bot_replies 
-                            (target_tweet_id, target_user_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text)
-                            VALUES (%s, %s, %s, %s, %s, %s)
+                            (target_tweet_id, target_user_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, action_type)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (target_tweet_id) DO NOTHING;
                         """, (
                             str(target_tweet_id),
@@ -309,11 +319,12 @@ class DatabaseManager:
                             clean_handle,
                             original_tweet_text[:1000] if original_tweet_text else "",
                             str(reply_tweet_id or ""),
-                            reply_text
+                            reply_text,
+                            clean_action
                         ))
                     pg_conn.close()
-                    print(f"[Database] Logged reply to @{clean_handle} in Supabase PostgreSQL.")
-                    return True
+                    print(f"[Database] Logged {clean_action} to @{clean_handle} in Supabase PostgreSQL.")
+                    pg_ok = True
                 except Exception as e:
                     print(f"[Database] Failed logging reply to PostgreSQL: {e}. Falling back to SQLite.")
 
@@ -322,22 +333,25 @@ class DatabaseManager:
             with sq_conn:
                 sq_conn.execute("""
                     INSERT OR IGNORE INTO bot_replies 
-                    (target_tweet_id, target_user_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text)
-                    VALUES (?, ?, ?, ?, ?, ?);
+                    (target_tweet_id, target_user_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, action_type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?);
                 """, (
                     str(target_tweet_id),
                     str(target_user_id or ""),
                     clean_handle,
                     original_tweet_text[:1000] if original_tweet_text else "",
                     str(reply_tweet_id or ""),
-                    reply_text
+                    reply_text,
+                    clean_action
                 ))
             sq_conn.close()
-            print(f"[Database] Logged reply to @{clean_handle} in local SQLite.")
+            if not pg_ok:
+                print(f"[Database] Logged {clean_action} to @{clean_handle} in local SQLite.")
             return True
         except Exception as e:
-            print(f"[Database] Error logging reply to SQLite: {e}")
-            return False
+            if not pg_ok:
+                print(f"[Database] Error logging reply to SQLite: {e}")
+            return pg_ok
 
     def get_recent_replies(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Retrieve recent engagement replies."""
@@ -348,12 +362,12 @@ class DatabaseManager:
                 try:
                     with pg_conn.cursor() as cur:
                         cur.execute("""
-                            SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
+                            SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at, COALESCE(action_type, 'reply')
                             FROM bot_replies
-                            WHERE target_tweet_id NOT LIKE 'test_tweet_%'
+                            WHERE target_tweet_id NOT LIKE %s
                             ORDER BY id DESC
                             LIMIT %s;
-                        """, (limit,))
+                        """, ("test_tweet_%", limit))
                         rows = cur.fetchall()
                         for r in rows:
                             results.append({
@@ -363,7 +377,8 @@ class DatabaseManager:
                                 "original_tweet_text": r[3],
                                 "reply_tweet_id": r[4],
                                 "reply_text": r[5],
-                                "created_at": str(r[6])
+                                "created_at": str(r[6]),
+                                "action_type": str(r[7] or "reply")
                             })
                     pg_conn.close()
                     return results
@@ -374,7 +389,7 @@ class DatabaseManager:
             sq_conn = self.get_sqlite_connection()
             cur = sq_conn.cursor()
             cur.execute("""
-                SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at
+                SELECT id, target_tweet_id, target_screen_name, original_tweet_text, reply_tweet_id, reply_text, created_at, COALESCE(action_type, 'reply')
                 FROM bot_replies
                 WHERE target_tweet_id NOT LIKE 'test_tweet_%'
                 ORDER BY id DESC
@@ -389,7 +404,8 @@ class DatabaseManager:
                     "original_tweet_text": r[3],
                     "reply_tweet_id": r[4],
                     "reply_text": r[5],
-                    "created_at": str(r[6])
+                    "created_at": str(r[6]),
+                    "action_type": str(r[7] or "reply")
                 })
             sq_conn.close()
         except Exception as e:

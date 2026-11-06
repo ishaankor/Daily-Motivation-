@@ -645,10 +645,16 @@ async def run_engagement_cycle(
     outbound_count = 0
     recent_replies_cache = db_manager.get_recent_replies(limit=20)
     base_turn_id = int(recent_replies_cache[0].get("id") or len(recent_replies_cache)) if recent_replies_cache else 0
+    last_two_actions = [str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:2]]
 
-    # If this run's first turn in 'auto' mode is a Quote-Tweet turn (every 3rd engagement),
-    # bubble photo-attached candidates to the front so Quote-Tweets strike visual gold.
-    if clean_mode == "quote" or (clean_mode == "auto" and (base_turn_id % 3 == 2)):
+    # Strictly enforce 2 Peer Replies -> 1 Quote-Tweet in 'auto' mode:
+    # Never Quote-Tweet if either of the last 2 logged engagements was already a Quote-Tweet.
+    first_turn_is_qt = (
+        len(last_two_actions) >= 2
+        and all(a == "reply" for a in last_two_actions)
+        and (base_turn_id % 3 == 2 or len(last_two_actions) == 2)
+    )
+    if clean_mode == "quote" or (clean_mode == "auto" and first_turn_is_qt):
         candidates.sort(key=lambda t: (bool(get_tweet_photo_urls(t)), score_candidate_tweet(t)), reverse=True)
 
     for idx, tweet in enumerate(candidates):
@@ -667,8 +673,15 @@ async def run_engagement_cycle(
         photo_urls = get_tweet_photo_urls(tweet)
 
         # Decide action type: 'quote' vs 'reply'
-        # Strictly rotate 2 Peer Replies -> 1 Quote-Tweet using monotonic DB id (never stuck at limit=20)
-        should_rotate_qt = ((base_turn_id + outbound_count) % 3 == 2)
+        # Check live recent_replies_cache so we NEVER post two Quote-Tweets before completing 2 Peer Replies
+        curr_last_two = [str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:2]]
+        should_rotate_qt = (
+            len(curr_last_two) >= 2
+            and all(a == "reply" for a in curr_last_two)
+            and ((base_turn_id + outbound_count) % 3 == 2 or "quote_tweet" not in [
+                str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:3]
+            ])
+        )
         use_quote_tweet = (
             clean_mode == "quote"
             or (clean_mode == "auto" and should_rotate_qt)
@@ -706,12 +719,13 @@ async def run_engagement_cycle(
         print(f"\nProposed {action_label} ({len(reply_text)} chars):")
         print(f"💬 \"{reply_text}\"\n")
 
-        # Append to in-memory cache so subsequent candidates in the same run cannot repeat trigrams
-        recent_replies_cache.insert(0, {"reply_text": reply_text})
+        # Append to in-memory cache so subsequent candidates in the same run cannot repeat trigrams or action types
+        action_type_str = "quote_tweet" if use_quote_tweet else "reply"
+        recent_replies_cache.insert(0, {"reply_text": reply_text, "action_type": action_type_str})
         target_url = f"https://x.com/{screen_name}/status/{tweet_id}"
 
         engagement_record = {
-            "action_type": "quote_tweet" if use_quote_tweet else "reply",
+            "action_type": action_type_str,
             "score": cand_score,
             "target_tweet_id": tweet_id,
             "target_screen_name": screen_name,
@@ -792,10 +806,13 @@ async def run_engagement_cycle(
                     reply_id = str(getattr(posted_reply, "id", ""))
                 else:
                     print(f"[Twitter] Posting reply to @{screen_name} via twikit...")
-                    if hasattr(tweet, "reply"):
-                        posted_reply = await tweet.reply(text=reply_text)
-                        reply_id = str(getattr(posted_reply, "id", ""))
-                    else:
+                    try:
+                        if hasattr(tweet, "reply"):
+                            posted_reply = await tweet.reply(text=reply_text)
+                            reply_id = str(getattr(posted_reply, "id", ""))
+                    except Exception:
+                        pass
+                    if not reply_id:
                         posted_reply = await twikit_client.create_tweet(text=reply_text, reply_to=tweet_id)
                         reply_id = str(getattr(posted_reply, "id", ""))
 
@@ -811,7 +828,8 @@ async def run_engagement_cycle(
                 target_screen_name=screen_name,
                 original_tweet_text=tweet_text,
                 reply_tweet_id=reply_id,
-                reply_text=reply_text
+                reply_text=reply_text,
+                action_type=action_type_str
             )
 
             engagement_record["reply_tweet_id"] = reply_id
