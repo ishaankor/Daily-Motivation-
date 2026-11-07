@@ -25,10 +25,17 @@ from bot.database import db_manager
 # to be paired with `min_faves:8` (Pass 1) and `min_faves:3` (Pass 2) so every search
 # returns fresh tweets (<1-3h old) that are actively surging in X's "For You" algorithm.
 NICHE_QUERIES = [
-    '(procrastinating OR doomscrolling OR "supposed to be studying" OR "instead of working" OR "instead of studying" OR "need to lock in")',
-    '(coding OR debugging OR "side project" OR "building in public" OR "my code" OR shipping) (bug OR tired OR hours OR finally OR launch OR stuck)',
-    '(studying OR midterm OR "due tomorrow" OR lecture OR assignment OR essay OR exam) (hours OR coffee OR sleep OR procrastinating OR cooked OR focus)',
-    '("can\'t focus" OR "zero motivation" OR "burnt out" OR procrastinated) (studying OR coding OR essay OR assignment OR project OR deadline OR homework)'
+    '(i OR "i\'m" OR my OR me) (procrastinating OR doomscrolling OR "supposed to be studying" OR "instead of working" OR "instead of studying" OR "need to lock in")',
+    '(i OR "i\'m" OR my OR me) (coding OR debugging OR "side project" OR "my code" OR shipping) (bug OR tired OR hours OR finally OR stuck)',
+    '(i OR "i\'m" OR my OR me) (studying OR midterm OR "due tomorrow" OR lecture OR assignment OR essay OR exam) (hours OR coffee OR sleep OR procrastinating OR cooked OR focus)',
+    '(i OR "i\'m" OR my OR me) ("can\'t focus" OR "zero motivation" OR "burnt out" OR procrastinated) (studying OR coding OR essay OR assignment OR project OR deadline OR homework)'
+]
+
+SERMON_AND_BAIT_PHRASES = [
+    "please read this", "open heart", "my beloved", "dear friend", "if you feel left behind",
+    "read that again", "let that sink in", "bookmark this", "a thread", "thread 🧵",
+    "here's how to", "here is how to", "unpopular opinion:", "hard truth:", "reminder that you",
+    "if you are reading this", "may god", "pray for", "amen"
 ]
 
 BLACKLIST_TERMS = [
@@ -230,6 +237,16 @@ def is_tweet_eligible(
     # Check for commercial pricing patterns (e.g. $28, $19.99, $500)
     if re.search(r"\$\s*\d+", text_clean):
         return False, "Tweet contains monetary price / commercial offer ($XX)"
+
+    # Filter out sermons, thread-bro motivational speeches, and ALL-CAPS engagement bait headers
+    for sp in SERMON_AND_BAIT_PHRASES:
+        if sp in text_lower:
+            return False, f"Tweet is a sermon/thread-bait post ('{sp}')"
+
+    first_line = text_without_links.split("\n")[0].strip()
+    alpha_chars = [c for c in first_line if c.isalpha()]
+    if len(alpha_chars) >= 25 and (sum(1 for c in alpha_chars if c.isupper()) / len(alpha_chars)) >= 0.80:
+        return False, "Tweet starts with an ALL-CAPS clickbait/sermon header"
 
     # 6. Database deduplication (have we already engaged with this user or tweet?)
     tweet_id = str(getattr(tweet, "id", ""))

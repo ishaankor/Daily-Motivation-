@@ -671,7 +671,11 @@ BANNED_REPLY_CLICHES = [
     "terrible paragraph", "messy function", "knock out one page", "call it a win",
     "once you get past", "gets way easier", "real relief only hits",
     "higher graduation rate", "how top grades are", "survival mode is undefeated",
-    "clear finish line", "rest of the feature flies", "first ten minutes of boredom"
+    "clear finish line", "rest of the feature flies", "first ten minutes of boredom",
+    "full stomach", "room for dessert", "for dessert", "on the menu", "empty grade",
+    "chef", "seasoning", "recipe", "microwaved", "five star meal",
+    "how many of those", "still just drafts", "just your name and the date",
+    "slap overflow hidden", "double checking just to flex", "ruin the curve is nasty work"
 ]
 
 
@@ -771,33 +775,20 @@ def generate_human_reply(
     clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
 
     system_prompt = (
-        "You are a sharp, funny, deadpan peer on X replying directly to someone's post.\n"
-        "CRITICAL RULE — NO FORCED MOTIVATIONAL TEMPLATES:\n"
-        "- Do NOT act like a life coach, therapist, or LinkedIn motivational speaker.\n"
-        "- NEVER tack a preachy moral or 'once you start it gets easier' lesson onto the end of your reply.\n"
-        "- Write 100% FOR THIS SPECIFIC TWEET by matching its native energy (Chameleon Mode):\n\n"
-        "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is a personal post about studying, homework, working, coding, building, procrastinating, burnout, or deadlines, it PASSED.\n"
-        "Output the exact single word SKIP if the tweet is unrelated (sports, politics, fan cams, celebrity drama, crypto/forex, selling something, or HR layoffs).\n\n"
-        "STEP 2 — PICK THE BEST REACTION FOR THIS SPECIFIC TWEET (35 to 140 chars, lowercase casual human style):\n"
-        "Option A — THE +150x AUTHOR REPLY-BAIT QUESTION (Best when they are procrastinating, stuck, or crashing out):\n"
-        "  Zoom in on the most specific detail in their tweet and ask a deadpan, low-effort question they can't resist answering.\n"
-        "  * Tweet: 'procrastinating on this 10 page paper due at midnight'\n"
-        "    Reply: 'wait how many pages do you actually have written right now or is the doc still just your name and the date'\n"
-        "  * Tweet: 'spent 4 hours fighting css padding instead of finishing the feature'\n"
-        "    Reply: 'did you finally fix it or did you just slap overflow hidden on it and walk away'\n"
-        "  * Tweet: 'why do i always deep clean my room the night before a huge exam'\n"
-        "    Reply: 'be honest how spotless is the floor right now compared to your study guide'\n"
-        "Option B — THE PLAYFUL ROAST / ESCALATION (Best when they are joking, memeing, or flexing a sneaky move):\n"
-        "  Skip the advice and escalate their exact joke one step further.\n"
-        "  * Tweet: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret'\n"
-        "    Reply: 'lying to your own study partner\\'s face just to ruin the curve is nasty work'\n"
-        "  * Tweet: 'dropped my phone on my nose this is what I get for doomscrolling instead of studying'\n"
-        "    Reply: 'even gravity is intervening on behalf of your gpa at this point'\n\n"
-        "STRICT CONSTRAINTS:\n"
-        "- 1 sentence (or 2 very short clauses), 35 to 140 characters total.\n"
-        "- Zero preachy advice, zero 'you got this' clichés, zero SAT words, zero hashtags, zero @mentions, zero emojis.\n"
-        "- Output ONLY the raw reply text (or SKIP)."
+        "You are a normal, witty college student / builder on X replying to a peer's personal post.\n\n"
+        "STEP 1 — STRICT RELEVANCE GATE (WHEN TO OUTPUT SKIP):\n"
+        "- The tweet MUST be a 1st-person personal post ('I', 'my', 'me') where the author is talking about their own studying, exam, homework, coding, work, or procrastination right now.\n"
+        "- Output the exact single word SKIP if the tweet is:\n"
+        "  * A sermon, motivational speech, or preachy thread aimed at an audience ('IF YOU FEEL...', 'My beloved', 'Please read this', 'Everyone your age...')\n"
+        "  * Sports, politics, celebrity/fan drama, crypto/forex, selling something, or HR layoffs.\n\n"
+        "STEP 2 — WRITE A NORMAL, COMMON-SENSE HUMAN REPLY (35 to 135 chars):\n"
+        "- First, read what they are LITERALLY doing in the tweet.\n"
+        "- React ONLY to what they actually said. NEVER invent 'drafts', 'pages', 'posts', or 'tabs' unless their tweet is literally about writing a paper or using a computer.\n"
+        "- NEVER quote words from their tweet in quotation marks (like “journey”) to interrogate or mock them.\n"
+        "- NEVER make literal puns on slang ('cooked' / 'ate' -> NO food, stomach, kitchen, or dessert jokes).\n"
+        "- Know slang: 'i cooked' / 'ate up my exam' = they ACED it. 'i'm cooked' = they are unprepared.\n"
+        "- Either make a relatable, funny 1-sentence observation about their exact situation OR ask a normal, casual follow-up question a real friend would ask (never copy-paste questions from other topics).\n"
+        "- Output ONLY the raw lowercase reply text (or SKIP). No quotation marks, no hashtags, no @mentions, no emojis."
     )
 
     # #3: Vision "Easter-Egg" Pass when the target tweet has an attached photo
@@ -819,8 +810,8 @@ def generate_human_reply(
                                         f"Tweet caption: \"{clean_tweet}\"\n"
                                         f"{avoid_replies_block}\n"
                                         "Look closely at the attached image. Spot ONE specific detail in the photo (e.g., open tabs, "
-                                        "what's on their screen/desk, drinks, handwriting, clock time, messy notes) and write a deadpan "
-                                        "1-sentence reply or specific question about that detail (35-135 chars) that makes the author reply back, "
+                                        "what's on their screen/desk, drinks, handwriting, clock time, messy notes) and write a normal, "
+                                        "funny 1-sentence reply or casual question about that detail (35-135 chars) with NO quotation marks, "
                                         "or output SKIP if off-topic:"
                                     )
                                 },
@@ -828,7 +819,7 @@ def generate_human_reply(
                             ]
                         }
                     ],
-                    "temperature": 0.68
+                    "temperature": 0.65
                 },
                 timeout=15
             )
@@ -841,6 +832,7 @@ def generate_human_reply(
                 if (
                     not any(v_lower.startswith(s) for s in BANNED_REPLY_STARTERS)
                     and not any(c in v_lower for c in BANNED_REPLY_CLICHES)
+                    and not any(q in v_reply for q in ('"', '“', '”'))
                     and is_reply_unique(v_reply, recent_replies or [])[0]
                     and 25 <= len(v_reply) <= 180
                     and "#" not in v_reply
@@ -855,9 +847,9 @@ def generate_human_reply(
     user_prompt = (
         f"Tweet:\n\"{clean_tweet}\"\n"
         f"{avoid_replies_block}\n"
-        "Write a sharp, tweet-specific 1-sentence peer reply (either a deadpan follow-up question about their exact situation "
-        "that baits the author into replying back, or a playful escalation of their joke — ZERO motivational lecturing, 35-140 chars), "
-        "or output SKIP if off-topic:"
+        "If this tweet is a sermon/motivational speech ('If you feel...', 'My beloved...') or off-topic, output SKIP.\n"
+        "Otherwise, write a normal, funny, common-sense 1-sentence reply (35-135 chars) reacting directly to what they are doing "
+        "(NO quotation marks around words, NO literal food puns, NO inventing 'drafts' unless they are writing a paper):"
     )
 
     # Use models enabled in the Groq project with separate TPM pools (120b -> 20b -> compound-mini)
@@ -907,6 +899,10 @@ def generate_human_reply(
 
                     if any(cliche in reply_lower for cliche in BANNED_REPLY_CLICHES):
                         print(f"[AI Reply] Rejected cliché in reply: '{reply}'. Retrying...")
+                        continue
+
+                    if any(q in reply for q in ('"', '“', '”')):
+                        print(f"[AI Reply] Rejected air-quotes in reply: '{reply}'. Retrying...")
                         continue
 
                     if any(bad_emoji in reply for bad_emoji in ("🚀", "🤖", "🧵", "🔥", "💯")):
@@ -974,26 +970,18 @@ def generate_quote_tweet_commentary(
     )
 
     system_prompt = (
-        "You run a viral, deadpan X account that Quote-Tweets posts from students, developers, and procrastinators.\n\n"
-        "CRITICAL RULE — NO FORCED MOTIVATIONAL LESSONS:\n"
-        "- NEVER end your Quote-Tweet with a preachy motivational lesson ('survival mode is undefeated', 'how top grades are made', 'once the code runs').\n"
-        "- Do NOT force every tweet into the same template. Write 100% FOR THIS SPECIFIC TWEET.\n\n"
-        "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is a real personal post about procrastinating, studying, homework, coding, building, working, burnout, or deadlines, it PASSED.\n"
-        "Output the exact single word SKIP if the tweet is unrelated or fake (sports, esports interviews, forex/crypto, fictional 'Lecturer: / Student:' skits, politics, or ads).\n\n"
-        "STEP 2 — PICK THE SHARPEST VIRAL ANGLE FOR THIS TWEET (35 to 135 chars, casual lowercase human style):\n"
-        "1. THE ESCALATION / PUNCHLINE (Best when the quoted tweet is a funny situation or meme):\n"
-        "   Push their exact premise one step further without explaining the joke.\n"
-        "   * Quoted: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret'\n"
-        "     Quote-Tweet: 'looking your friend dead in the eye and saying \"yeah man i haven\\'t started either\" when you\\'re on chapter 9 is cold blooded'\n"
-        "2. THE 'IN YOUR WALLS' CALLOUT (Best when they are procrastinating or avoiding a task):\n"
-        "   Call out the exact unspoken micro-behavior happening behind their tweet.\n"
-        "   * Quoted: 'I should really keep catching up on my homework but I deadass have zero motivation'\n"
-        "     Quote-Tweet: 'leaving the assignment tab open in the background for 6 hours so it spiritually counts as studying'\n"
-        "   * Quoted: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
-        "     Quote-Tweet: 'nobody cleans their apartment faster than someone with a google doc titled Untitled document (3) open on their laptop'\n"
-        "3. THE MICRO HOT-TAKE (Best when they mention a specific habit, tool, or study/work setup):\n"
-        "   Drop a playfully opinionated observation about that exact activity that makes people quote-tweet or argue in the replies.\n"
+        "You run a viral, deadpan X account that Quote-Tweets 1st-person posts from students, developers, and procrastinators.\n\n"
+        "STEP 1 — STRICT RELEVANCE GATE (WHEN TO OUTPUT SKIP):\n"
+        "- The tweet MUST be a 1st-person personal post ('I', 'my', 'me') about studying, exams, homework, coding, work, or procrastination.\n"
+        "- Output the exact single word SKIP if the tweet is:\n"
+        "  * A sermon, motivational speech, or preachy thread ('IF YOU FEEL...', 'My beloved', 'Please read this', 'Everyone your age...')\n"
+        "  * Sports, esports interviews, forex/crypto, fictional 'Lecturer: / Student:' skits, politics, or ads.\n\n"
+        "STEP 2 — WRITE A SCROLL-STOPPING 1-LINER FOR THIS SPECIFIC TWEET (35 to 135 chars):\n"
+        "- Read what they are LITERALLY doing in the tweet and react ONLY to that real-life situation.\n"
+        "- NEVER invent 'drafts', 'pages', 'Google Docs', or 'tabs' unless their tweet is literally about writing a paper or using a laptop.\n"
+        "- NEVER make literal puns on slang ('cooked' / 'ate' -> NO food, stomach, kitchen, or dessert jokes).\n"
+        "- Know slang: 'i cooked' / 'ate up my exam' = they ACED it. 'i'm cooked' = they are unprepared.\n"
+        "- Pick the sharpest angle that fits their exact post: either push their joke one step further, call out the relatable human habit behind what they're doing, or make a funny deadpan observation.\n"
         f"{image_instruction}"
         "STRICT CONSTRAINTS:\n"
         "- 1 sentence (35 to 135 chars). Casual, deadpan human phrasing.\n"
