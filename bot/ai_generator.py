@@ -668,7 +668,10 @@ BANNED_REPLY_CLICHES = [
     "movie villain", "training arc", "isaac newton",
     "close the doc", "close the tab", "close the app", "open the doc",
     "open the file", "put down the", "step away from", "ugly first draft",
-    "terrible paragraph", "messy function", "knock out one page", "call it a win"
+    "terrible paragraph", "messy function", "knock out one page", "call it a win",
+    "once you get past", "gets way easier", "real relief only hits",
+    "higher graduation rate", "how top grades are", "survival mode is undefeated",
+    "clear finish line", "rest of the feature flies", "first ten minutes of boredom"
 ]
 
 
@@ -724,11 +727,15 @@ def generate_human_reply(
     tweet_text: str,
     author_name: str = "",
     recent_replies: Optional[List[Dict[str, Any]]] = None,
-    retries: int = 3
+    retries: int = 3,
+    media_urls: Optional[List[str]] = None
 ) -> Optional[str]:
     """
-    Generate an organic, non-repetitive peer reply designed to spark genuine
-    author engagement (likes/replies) and avoid X spam/ghost-ban heuristics.
+    Generate a 100% tweet-specific peer reply engineered for X's Heavy Ranker:
+    - #1 Chameleon Mode: Matches the exact native energy of the tweet (zero forced motivational lectures).
+    - #2 Author Reply-Bait (+150x Heavy Ranker boost): Uses hyper-specific follow-up questions or playful
+      callouts about the exact detail in their tweet so the author replies back.
+    - #3 Vision Easter-Egg Zoom-In: When a photo is attached, spots a specific background detail in the image.
     """
     if not ai_config.groq_api_key:
         print("[AI Reply] No GROQ_API_KEY set.")
@@ -760,35 +767,97 @@ def generate_human_reply(
         "Content-Type": "application/json"
     }
 
+    has_image = bool(media_urls and len(media_urls) > 0)
+    clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
+
     system_prompt = (
-        "You are a supportive, funny, relatable 20-something friend on X.\n"
-        "Your signature style is HUMOROUS + MOTIVATIONAL at the same time—tailored 100% to the exact situation in their tweet.\n\n"
+        "You are a sharp, funny, deadpan peer on X replying directly to someone's post.\n"
+        "CRITICAL RULE — NO FORCED MOTIVATIONAL TEMPLATES:\n"
+        "- Do NOT act like a life coach, therapist, or LinkedIn motivational speaker.\n"
+        "- NEVER tack a preachy moral or 'once you start it gets easier' lesson onto the end of your reply.\n"
+        "- Write 100% FOR THIS SPECIFIC TWEET by matching its native energy (Chameleon Mode):\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
-        "If the tweet is a personal post about studying, working, coding, building a project, procrastinating, burnout, creative block, deadlines, or trying to focus, it PASSED — write the reply!\n"
-        "ONLY output the exact single word SKIP if the tweet is completely unrelated (e.g., sports, politics, fan cams, celebrity drama, selling something, or getting fired by HR).\n\n"
-        "STEP 2 — UNIQUE CONTEXTUAL MOTIVATION (NO AI TEMPLATES):\n"
-        "- Write 1 to 2 natural sentences (45 to 160 characters) that combine light, everyday humor about their specific situation with genuine encouragement.\n"
-        "- NEVER USE ROBOTIC IMPERATIVE ENDINGS: Do NOT end with cookie-cutter commands like 'Close the X, open the Y', 'Write one ugly paragraph', 'Do 15 minutes and call it a win', or 'Knock out one page'. Those sound like an AI template.\n"
-        "- Instead, make the motivation flow naturally from WHY they are stuck or tired (e.g., reminding them the mental dread is always harder than the actual work, taking the perfectionism pressure off, or hyping up how good it'll feel once that specific thing is off their plate).\n"
-        "- Use simple, everyday conversational English. NEVER use pretentious SAT/thesaurus words ('schadenfreude', 'smugly', 'canonical', 'poetic', 'rite of passage', 'masterclass', 'peak').\n"
-        "- STAY 100% ON THEIR EXACT TOPIC: Never ask 'what are you building?' unless their tweet explicitly mentions coding or building an app.\n"
-        "- Output ONLY the reply text (or SKIP). NO quotes, NO hashtags, NO links, NO @mentions, NO emojis.\n\n"
-        "GOLD-STANDARD EXAMPLES (Notice how every ending is completely different and fits the exact context):\n"
-        "- Tweet: 'dropped my phone on my nose this is what I get for not studying and doomscrolling instead'\n"
-        "  Reply: 'even gravity is intervening on behalf of your GPA at this point. the hardest part is just surviving the first ten minutes of boredom'\n"
-        "- Tweet: 'procrastinating by organizing my spotify playlist instead of studying for this midterm'\n"
-        "  Reply: 'curating the vibe always feels mandatory until you realize the exam is tomorrow. at least your study soundtrack is elite for tonight\\'s grind'\n"
-        "- Tweet: 'why do i always deep clean my room the night before a huge deadline'\n"
-        "  Reply: 'cleaning has a clear finish line and a big deadline feels overwhelming, that\\'s why our brains love the swap. once you get past the blank page it gets way easier'\n"
-        "- Tweet: 'spent 4 hours fighting css padding instead of finishing the feature'\n"
-        "  Reply: 'fighting layout bugs is the most exhausting part of building because nothing looks like progress on screen, but once that clicks the rest of the feature flies'"
+        "If the tweet is a personal post about studying, homework, working, coding, building, procrastinating, burnout, or deadlines, it PASSED.\n"
+        "Output the exact single word SKIP if the tweet is unrelated (sports, politics, fan cams, celebrity drama, crypto/forex, selling something, or HR layoffs).\n\n"
+        "STEP 2 — PICK THE BEST REACTION FOR THIS SPECIFIC TWEET (35 to 140 chars, lowercase casual human style):\n"
+        "Option A — THE +150x AUTHOR REPLY-BAIT QUESTION (Best when they are procrastinating, stuck, or crashing out):\n"
+        "  Zoom in on the most specific detail in their tweet and ask a deadpan, low-effort question they can't resist answering.\n"
+        "  * Tweet: 'procrastinating on this 10 page paper due at midnight'\n"
+        "    Reply: 'wait how many pages do you actually have written right now or is the doc still just your name and the date'\n"
+        "  * Tweet: 'spent 4 hours fighting css padding instead of finishing the feature'\n"
+        "    Reply: 'did you finally fix it or did you just slap overflow hidden on it and walk away'\n"
+        "  * Tweet: 'why do i always deep clean my room the night before a huge exam'\n"
+        "    Reply: 'be honest how spotless is the floor right now compared to your study guide'\n"
+        "Option B — THE PLAYFUL ROAST / ESCALATION (Best when they are joking, memeing, or flexing a sneaky move):\n"
+        "  Skip the advice and escalate their exact joke one step further.\n"
+        "  * Tweet: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret'\n"
+        "    Reply: 'lying to your own study partner\\'s face just to ruin the curve is nasty work'\n"
+        "  * Tweet: 'dropped my phone on my nose this is what I get for doomscrolling instead of studying'\n"
+        "    Reply: 'even gravity is intervening on behalf of your gpa at this point'\n\n"
+        "STRICT CONSTRAINTS:\n"
+        "- 1 sentence (or 2 very short clauses), 35 to 140 characters total.\n"
+        "- Zero preachy advice, zero 'you got this' clichés, zero SAT words, zero hashtags, zero @mentions, zero emojis.\n"
+        "- Output ONLY the raw reply text (or SKIP)."
     )
 
-    clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
+    # #3: Vision "Easter-Egg" Pass when the target tweet has an attached photo
+    if has_image and media_urls:
+        try:
+            vision_resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json={
+                    "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": (
+                                        f"Tweet caption: \"{clean_tweet}\"\n"
+                                        f"{avoid_replies_block}\n"
+                                        "Look closely at the attached image. Spot ONE specific detail in the photo (e.g., open tabs, "
+                                        "what's on their screen/desk, drinks, handwriting, clock time, messy notes) and write a deadpan "
+                                        "1-sentence reply or specific question about that detail (35-135 chars) that makes the author reply back, "
+                                        "or output SKIP if off-topic:"
+                                    )
+                                },
+                                {"type": "image_url", "image_url": {"url": media_urls[0]}}
+                            ]
+                        }
+                    ],
+                    "temperature": 0.68
+                },
+                timeout=15
+            )
+            if vision_resp.status_code == 200:
+                v_reply = (vision_resp.json()["choices"][0]["message"].get("content") or "").strip().strip("\"'")
+                if v_reply.upper().startswith("SKIP"):
+                    print("[AI Reply Vision] Vision gate marked image tweet as off-topic (SKIP).")
+                    return None
+                v_lower = v_reply.lower()
+                if (
+                    not any(v_lower.startswith(s) for s in BANNED_REPLY_STARTERS)
+                    and not any(c in v_lower for c in BANNED_REPLY_CLICHES)
+                    and is_reply_unique(v_reply, recent_replies or [])[0]
+                    and 25 <= len(v_reply) <= 180
+                    and "#" not in v_reply
+                    and "http" not in v_reply
+                    and "@" not in v_reply
+                ):
+                    print("  👁 [Vision Peer Reply] Generated using live image detail inspection!")
+                    return v_reply
+        except Exception:
+            pass
+
     user_prompt = (
         f"Tweet:\n\"{clean_tweet}\"\n"
         f"{avoid_replies_block}\n"
-        f"Write a humorous, genuinely motivating 1-2 sentence reply tailored to this exact tweet (45-160 chars) WITHOUT using cookie-cutter 'close the X / start the Y' endings, or output SKIP if off-topic:"
+        "Write a sharp, tweet-specific 1-sentence peer reply (either a deadpan follow-up question about their exact situation "
+        "that baits the author into replying back, or a playful escalation of their joke — ZERO motivational lecturing, 35-140 chars), "
+        "or output SKIP if off-topic:"
     )
 
     # Use models enabled in the Groq project with separate TPM pools (120b -> 20b -> compound-mini)
@@ -807,7 +876,7 @@ def generate_human_reply(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                "temperature": 0.68
+                "temperature": 0.72
             }
             if model.startswith("openai/gpt-oss"):
                 payload["reasoning_effort"] = "low"
@@ -849,7 +918,7 @@ def generate_human_reply(
                         print(f"[AI Reply] Rejected non-unique reply ({unique_reason}): '{reply}'. Retrying...")
                         continue
 
-                    if 25 <= len(reply) <= 220 and "#" not in reply and "http" not in reply and "@" not in reply:
+                    if 25 <= len(reply) <= 200 and "#" not in reply and "http" not in reply and "@" not in reply:
                         return reply
                     else:
                         print(f"[AI Reply] Reply failed quality/length check ({len(reply)} chars): '{reply}'. Retrying...")
@@ -876,10 +945,11 @@ def generate_quote_tweet_commentary(
     media_urls: Optional[List[str]] = None
 ) -> Optional[str]:
     """
-    Generate a 'Double-Take / Curiosity Gap' observation for Quote-Tweeting
-    a relatable post (including posts with attached photos/images). Quote Tweets appear
-    on the main timeline, render the full image card, notify the author, and carry
-    zero cold-reply deboosting risk.
+    Generate a scroll-stopping Quote-Tweet written 100% FOR the target tweet/photo:
+    - #1 Chameleon Mode: Escalates the joke, calls out the unspoken behavior, or drops a sharp micro hot-take
+      with ZERO forced motivational lecturing.
+    - #3 Vision Easter-Egg Zoom-In: When quoting a photo, calls out one specific background detail in the image
+      so viewers pause and tap/zoom into the photo (spiking Dwell Time + Photo Expands).
     """
     if not ai_config.groq_api_key:
         return None
@@ -898,45 +968,49 @@ def generate_quote_tweet_commentary(
 
     has_image = bool(media_urls and len(media_urls) > 0)
     image_instruction = (
-        "- This post has a photo attached (which appears as a big image card below your text), "
-        "so keep your Quote-Tweet short and punchy so it pairs cleanly with the image.\n"
+        "- This tweet has a photo attached below your text. Do NOT summarize their caption—write a punchy 1-liner "
+        "that makes people look twice at the image.\n"
         if has_image else ""
     )
 
     system_prompt = (
-        "You run a funny, brutally honest, and motivating X account for students, builders, and procrastinators.\n"
-        "You are Quote-Tweeting someone's post.\n\n"
+        "You run a viral, deadpan X account that Quote-Tweets posts from students, developers, and procrastinators.\n\n"
+        "CRITICAL RULE — NO FORCED MOTIVATIONAL LESSONS:\n"
+        "- NEVER end your Quote-Tweet with a preachy motivational lesson ('survival mode is undefeated', 'how top grades are made', 'once the code runs').\n"
+        "- Do NOT force every tweet into the same template. Write 100% FOR THIS SPECIFIC TWEET.\n\n"
         "STEP 1 — RELEVANCE GATE:\n"
         "If the tweet is a real personal post about procrastinating, studying, homework, coding, building, working, burnout, or deadlines, it PASSED.\n"
-        "Output the exact single word SKIP if the tweet is unrelated or fake (e.g., sports, esports interviews, financial/forex trading, fictional 'Lecturer: / Student:' dialogue skits, politics, or selling something).\n\n"
-        "STEP 2 — UNIQUE CONTEXTUAL QUOTE-TWEET (HUMOR + MOTIVATION WITHOUT AI TEMPLATES):\n"
-        "- Write 1 to 2 short, punchy sentences (45 to 145 characters) in plain, everyday English.\n"
-        "- Call out the exact funny reality or excuse in their tweet in a way that simultaneously motivates them (by reframing why they are stuck, reminding them that the dread before starting is worse than the work itself, or showing how close they actually are).\n"
-        "- NEVER USE ROBOTIC COMMAND ENDINGS: Strictly forbid ending with cookie-cutter commands like 'Close the X, open the Y', 'Write one ugly paragraph', 'Write the first ugly function', or 'Knock out one page'. Every Quote-Tweet must end in a completely unique way that grows naturally out of their specific tweet.\n"
+        "Output the exact single word SKIP if the tweet is unrelated or fake (sports, esports interviews, forex/crypto, fictional 'Lecturer: / Student:' skits, politics, or ads).\n\n"
+        "STEP 2 — PICK THE SHARPEST VIRAL ANGLE FOR THIS TWEET (35 to 135 chars, casual lowercase human style):\n"
+        "1. THE ESCALATION / PUNCHLINE (Best when the quoted tweet is a funny situation or meme):\n"
+        "   Push their exact premise one step further without explaining the joke.\n"
+        "   * Quoted: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret'\n"
+        "     Quote-Tweet: 'looking your friend dead in the eye and saying \"yeah man i haven\\'t started either\" when you\\'re on chapter 9 is cold blooded'\n"
+        "2. THE 'IN YOUR WALLS' CALLOUT (Best when they are procrastinating or avoiding a task):\n"
+        "   Call out the exact unspoken micro-behavior happening behind their tweet.\n"
+        "   * Quoted: 'I should really keep catching up on my homework but I deadass have zero motivation'\n"
+        "     Quote-Tweet: 'leaving the assignment tab open in the background for 6 hours so it spiritually counts as studying'\n"
+        "   * Quoted: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
+        "     Quote-Tweet: 'nobody cleans their apartment faster than someone with a google doc titled Untitled document (3) open on their laptop'\n"
+        "3. THE MICRO HOT-TAKE (Best when they mention a specific habit, tool, or study/work setup):\n"
+        "   Drop a playfully opinionated observation about that exact activity that makes people quote-tweet or argue in the replies.\n"
         f"{image_instruction}"
-        "CRITICAL RULES:\n"
-        "- MUST MAKE 100% LOGICAL SENSE: Never invent weird metaphors, fictional characters, 'hero origin stories', 'mentors in the shadows', or movie trailer lines. React to what they ACTUALLY said.\n"
-        "- If their tweet mentions a random anime/game character name you don't need, ignore the character name and focus on their actual homework/work struggle.\n"
-        "- Use simple everyday words. No hashtags, no links, no @mentions, no quotes around the output.\n\n"
-        "GOLD-STANDARD QUOTE-TWEET EXAMPLES (Notice how every ending is unique to the situation, with zero 'close X / start Y' commands):\n"
-        "- Quoted Tweet: 'I should really keep catching up on my homework but I deadass have zero motivation... if I don\\'t get off my ass and do something my dad will eviscerate me'\n"
-        "  Quote-Tweet: 'fear of an angry parent has a higher graduation rate than pure passion ever will—survival mode is undefeated once it kicks in.'\n"
-        "- Quoted Tweet: 'just cleaned my entire kitchen from top to bottom instead of starting my 5 page paper'\n"
-        "  Quote-Tweet: 'nobody cleans harder than someone dreading a blank page, mostly because dishes have a clear finish line and essays don\\'t.'\n"
-        "- Quoted Tweet: 'spent 3 hours tweaking my editor theme instead of writing the code'\n"
-        "  Quote-Tweet: 'we spend hours picking fonts because you can\\'t fail at a color scheme, but the real relief only hits once the code actually runs.'\n"
-        "- Quoted Tweet: 'When bro says we\\'re cooked for the exam but I\\'ve been studying in secret' [Photo Attached]\n"
-        "  Quote-Tweet: 'acting panicked in the group chat while quietly locking in at home is how top grades are actually made.'"
+        "STRICT CONSTRAINTS:\n"
+        "- 1 sentence (35 to 135 chars). Casual, deadpan human phrasing.\n"
+        "- Zero life-coach advice, zero hashtags, zero links, zero @mentions, no wrapping quotes.\n"
+        "- Output ONLY the Quote-Tweet text (or SKIP)."
     )
 
     clean_tweet = re.sub(r"https?://\S+", "", tweet_text).strip()
-    media_note = "\n[Note: This tweet also has a photo/image attached that viewers will see right below your Quote-Tweet.]" if has_image else ""
+    media_note = "\n[Note: This tweet has a photo attached right below your Quote-Tweet.]" if has_image else ""
     user_prompt = (
         f"Quoted Tweet:\n\"{clean_tweet}\"{media_note}\n\n"
-        f"Write a funny, crystal-clear, and motivating Quote-Tweet (45-145 chars) unique to this exact tweet WITHOUT using 'close the X / start the Y' command endings, or output SKIP if off-topic:"
+        "Write a scroll-stopping 1-sentence Quote-Tweet (35-135 chars) written 100% FOR this specific tweet "
+        "(escalate the bit, call out the unspoken behavior, or drop a sharp observation — ZERO preachy motivational morals), "
+        "or output SKIP if off-topic:"
     )
 
-    # Optional Pass 0: If the tweet has a photo and a Groq Vision model is enabled, inspect the actual image!
+    # #3: Vision "Easter Egg / Background Detail" Zoom-In when the quoted tweet has a photo
     if has_image and media_urls:
         try:
             vision_resp = requests.post(
@@ -953,8 +1027,10 @@ def generate_quote_tweet_commentary(
                                     "type": "text",
                                     "text": (
                                         f"Quoted Tweet caption: \"{clean_tweet}\"\n"
-                                        "Look at the attached image and caption. Spot a specific visual detail or vibe in the photo "
-                                        "and write a 1-liner 'Double-Take' Quote-Tweet (30-110 chars) that makes viewers zoom into the image, "
+                                        "Look at the attached photo. Do NOT summarize the caption. Spot ONE tiny specific background detail "
+                                        "in the image (e.g., number of open browser tabs, battery %, empty cans/cups, messy handwriting, "
+                                        "clock time, or a funny contrast between the photo and caption) and write a deadpan 1-liner "
+                                        "(30-120 chars) calling out that visual detail so viewers tap and zoom into the image, "
                                         "or output SKIP if off-topic:"
                                     )
                                 },
@@ -962,7 +1038,7 @@ def generate_quote_tweet_commentary(
                             ]
                         }
                     ],
-                    "temperature": 0.65
+                    "temperature": 0.68
                 },
                 timeout=15
             )
@@ -971,9 +1047,16 @@ def generate_quote_tweet_commentary(
                 if v_text.upper().startswith("SKIP"):
                     print("[AI Quote Vision] Vision gate marked image tweet as off-topic (SKIP).")
                     return None
+                v_lower = v_text.lower()
                 unique_ok, _ = is_reply_unique(v_text, recent_replies or [])
-                if unique_ok and 25 <= len(v_text) <= 220 and "#" not in v_text and "http" not in v_text:
-                    print("  👁 [Vision Quote-Tweet] Generated using live image inspection!")
+                if (
+                    unique_ok
+                    and not any(c in v_lower for c in BANNED_REPLY_CLICHES)
+                    and 25 <= len(v_text) <= 180
+                    and "#" not in v_text
+                    and "http" not in v_text
+                ):
+                    print("  👁 [Vision Quote-Tweet] Generated Easter-Egg zoom-in from live image inspection!")
                     return v_text
         except Exception:
             pass

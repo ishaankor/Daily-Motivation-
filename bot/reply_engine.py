@@ -709,7 +709,8 @@ async def run_engagement_cycle(
             reply_text = generate_human_reply(
                 tweet_text,
                 author_name=name or screen_name,
-                recent_replies=recent_replies_cache
+                recent_replies=recent_replies_cache,
+                media_urls=photo_urls
             )
 
         if not reply_text:
@@ -719,9 +720,7 @@ async def run_engagement_cycle(
         print(f"\nProposed {action_label} ({len(reply_text)} chars):")
         print(f"💬 \"{reply_text}\"\n")
 
-        # Append to in-memory cache so subsequent candidates in the same run cannot repeat trigrams or action types
         action_type_str = "quote_tweet" if use_quote_tweet else "reply"
-        recent_replies_cache.insert(0, {"reply_text": reply_text, "action_type": action_type_str})
         target_url = f"https://x.com/{screen_name}/status/{tweet_id}"
 
         engagement_record = {
@@ -736,6 +735,7 @@ async def run_engagement_cycle(
 
         if dry_run:
             print(f"[DRY RUN ACTIVE] Simulated {action_label} for @{screen_name}. No actions sent to Twitter.")
+            recent_replies_cache.insert(0, {"reply_text": reply_text, "action_type": action_type_str})
             engagement_record["reply_tweet_id"] = f"sim_{int(time.time())}_{idx}"
             engagements.append(engagement_record)
             outbound_count += 1
@@ -831,6 +831,7 @@ async def run_engagement_cycle(
                 reply_text=reply_text,
                 action_type=action_type_str
             )
+            recent_replies_cache.insert(0, {"reply_text": reply_text, "action_type": action_type_str})
 
             engagement_record["reply_tweet_id"] = reply_id
             engagement_record["reply_url"] = reply_url
