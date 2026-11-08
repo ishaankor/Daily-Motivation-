@@ -665,11 +665,10 @@ async def run_engagement_cycle(
     last_two_actions = [str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:2]]
 
     # Strictly enforce 2 Peer Replies -> 1 Quote-Tweet in 'auto' mode:
-    # Never Quote-Tweet if either of the last 2 logged engagements was already a Quote-Tweet.
+    # Quote-Tweet whenever the last 2 logged engagements were both 'reply'.
     first_turn_is_qt = (
         len(last_two_actions) >= 2
         and all(a == "reply" for a in last_two_actions)
-        and (base_turn_id % 3 == 2 or len(last_two_actions) == 2)
     )
     if clean_mode == "quote" or (clean_mode == "auto" and first_turn_is_qt):
         candidates.sort(key=lambda t: (bool(get_tweet_photo_urls(t)), score_candidate_tweet(t)), reverse=True)
@@ -690,14 +689,11 @@ async def run_engagement_cycle(
         photo_urls = get_tweet_photo_urls(tweet)
 
         # Decide action type: 'quote' vs 'reply'
-        # Check live recent_replies_cache so we NEVER post two Quote-Tweets before completing 2 Peer Replies
+        # Pure 2-Reply -> 1-Quote-Tweet cycle: if the last 2 actions were both 'reply', this turn is a 'quote_tweet'
         curr_last_two = [str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:2]]
         should_rotate_qt = (
             len(curr_last_two) >= 2
             and all(a == "reply" for a in curr_last_two)
-            and ((base_turn_id + outbound_count) % 3 == 2 or "quote_tweet" not in [
-                str(r.get("action_type") or "reply").lower() for r in recent_replies_cache[:3]
-            ])
         )
         use_quote_tweet = (
             clean_mode == "quote"
