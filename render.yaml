@@ -12,9 +12,9 @@ services:
       - key: HANDLE
         value: "@MotivationFTD"
       - key: ENABLE_DAILY_POSTING
-        value: "true"
+        value: "false"
       - key: ENABLE_ENGAGEMENT
-        value: "true"
+        value: "false"
       - key: ENGAGEMENT_MAX_DAILY_REPLIES
         value: "3"
       - key: ENGAGEMENT_MIN_COOLDOWN_HOURS

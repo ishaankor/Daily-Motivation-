@@ -41,6 +41,10 @@ def scheduled_engagement_job():
 
 def scheduled_job():
     """Execute today's scheduled posting workflow with organic timing jitter."""
+    if not twitter_config.daily_posting_enabled:
+        print("[Scheduler] Daily posting is disabled (ENABLE_DAILY_POSTING=false). Skipping slot.")
+        return
+
     now = datetime.datetime.now()
     day_name = now.strftime("%A")
 
